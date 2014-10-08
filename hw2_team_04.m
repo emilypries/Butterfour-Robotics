@@ -259,7 +259,7 @@ function [new_xs, new_ys] = save_point(x, y, old_xs, old_ys)
 end
 
 function plot_path(xs, ys)
-    f = figure('Visible','on','Position',[100,100,600,600], 'menubar', 'none', 'name', 'Roomba 2 Path', 'resize', 'off') ;
+    f = figure('Visible','on','Position',[100,100,600,600], 'menubar', 'none', 'name', 'Roomba Path: Team 4', 'resize', 'off') ;
     hPlotAxes = axes(...    % Axes for plotting the selected plot
                 'Parent', f, ...
                 'Units', 'normalized', ...
