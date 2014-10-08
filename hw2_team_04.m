@@ -27,6 +27,9 @@ goal_dist = 4;
     x_pos = 0;
     y_pos = 0;
     r_ang = 0;
+    
+    xs = [x_pos];
+    ys = [y_pos];
   
     % current state and hit-point descriptors
     curr_state = TO_GOAL;
@@ -42,9 +45,11 @@ goal_dist = 4;
         if (x_pos > goal_dist - err && x_pos < goal_dist + err...
                                     && y_pos > -err && y_pos < err)
             display('goal reached!');
+            plot_path(xs, ys)
             break;
         end
         [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, 0);
+        [xs, ys] = save_point(x_pos, y_pos, xs, ys);
         
         % checks for bump on robot
         [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
@@ -60,8 +65,8 @@ goal_dist = 4;
             
         elseif (curr_state == FOLLOW_OBJ)
             display('state: circumnavigating object');
-            [x_pos, y_pos] = hw2_follow(serPort, x_pos, y_pos, r_ang,...
-                                        hit_x_pos, hit_y_pos);
+            [x_pos, y_pos, xs, ys] = hw2_follow(serPort, x_pos, y_pos, r_ang,...
+                                        hit_x_pos, hit_y_pos, xs, ys);
             % checks if back at m-line and closer to goal
             if ((y_pos > -err && y_pos < err...
                  && (x_pos > hit_x_pos + err || x_pos < hit_x_pos - err)...
@@ -89,7 +94,7 @@ end
 % takes the args: positional descriptors and hit-point coordinates
 % returns: leave-point coordinates
 % serPort is robot object returned by RoombaInit
-function [lx, ly] = hw2_follow(serPort, x, y, r, hx, hy)
+function [lx, ly, xs, ys] = hw2_follow(serPort, x, y, r, hx, hy, xs, ys)
 global err;
 global goal_dist;
 % margin of error used in positional operations
@@ -112,6 +117,10 @@ goal_dist = 4;
     turn_adjust = pi;
     first_time  = true;
     
+    x;
+    y;
+    r;
+    
     % cur_state tracks current state
     cur_state  = BUMP_FOUND;
     
@@ -120,6 +129,7 @@ goal_dist = 4;
         % updates the timer and space values
         
         [x, y, r] = adjust_dist(serPort, x, y, r);
+        [xs, ys] = save_point(x, y, xs, ys);
     
         % checks if robot re-encounters the m-line OR
         % if it reaches the goal OR if it returns to the
@@ -203,6 +213,7 @@ goal_dist = 4;
             SetDriveWheelsCreate(serPort, 0.1, 0.1);
             pause(0.7);
             [x, y, r] = adjust_dist(serPort, x, y, r);
+            [xs, ys] = save_point(x, y, xs, ys);
             SetDriveWheelsCreate(serPort, 0, 0.1);
             cur_state = END_CORNER;
             crnr_angle = r;
@@ -228,7 +239,9 @@ goal_dist = 4;
     ly = y;
     turnAngle(serPort, .2, -r*(180/pi));
     AngleSensorRoomba(serPort);
-    [x, y, r] = adjust_dist(serPort, x, y, r);
+    [x, y, r] = adjust_dist(serPort, x, y, r)
+    [xs, ys] = save_point(x, y, xs, ys);
+    
 end
 
 % adjust_dist updates space descriptors, avoiding default func. resets
@@ -240,3 +253,24 @@ function [x, y, r] = adjust_dist(port, a, b, rad)
     y = b+(d*sin(rad))
 end
 
+function [new_xs, new_ys] = save_point(x, y, old_xs, old_ys)
+    new_xs = [old_xs, x];
+    new_ys = [old_ys, y];
+end
+
+function plot_path(xs, ys)
+    f = figure('Visible','on','Position',[100,100,600,600], 'menubar', 'none', 'name', 'Roomba 2 Path', 'resize', 'off') ;
+    hPlotAxes = axes(...    % Axes for plotting the selected plot
+                'Parent', f, ...
+                'Units', 'normalized', ...
+                'HandleVisibility','callback', ...
+                 'Position',[0.1 0.1 0.8 0.8], ...
+                 'XLim', [0,5], 'YLim', [-10, 10], ...
+                 'NextPlot', 'replacechildren', ...
+                 'XGrid', 'on', 'YGrid', 'on');
+    c = linspace(1,10,length(xs));
+    scatter (xs, ys, 20, c, 'filled');
+    
+   
+
+end
