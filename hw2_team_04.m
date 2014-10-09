@@ -41,6 +41,7 @@ goal_dist = 4;
     SetFwdVelRadiusRoomba(serPort, 0.2, inf);
     
     while (true)
+        
         % checks if goal is reached
         if (x_pos > goal_dist - err && x_pos < goal_dist + err...
                                     && y_pos > -err && y_pos < err)
@@ -48,6 +49,7 @@ goal_dist = 4;
             plot_path(xs, ys)
             break;
         end
+        
         [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, 0);
         [xs, ys] = save_point(x_pos, y_pos, xs, ys);
         
@@ -81,7 +83,6 @@ goal_dist = 4;
             end
             
             SetFwdVelRadiusRoomba(serPort, 0.2, inf);
-            r_ang = 0;
             curr_state = TO_GOAL;
         end
         pause(0.05);
@@ -116,10 +117,6 @@ goal_dist = 4;
     spin_angle  = 0;
     turn_adjust = pi;
     first_time  = true;
-    
-    x;
-    y;
-    r;
     
     % cur_state tracks current state
     cur_state  = BUMP_FOUND;
@@ -182,14 +179,14 @@ goal_dist = 4;
                 SetDriveWheelsCreate(serPort, -0.05, 0.05);
                 cur_state = TURN_BACK;
             end
-            
+ 
+        % 
         elseif(cur_state == TURN_BACK)
             display('state: spinning back');
             if(r > spin_angle - pi/180 && r < spin_angle + pi/180)
                 SetDriveWheelsCreate(serPort, 0, 0);
                 cur_state = TURN_CORNER;
-            end
-            
+            end          
             
         % robot moves straight along wall
         elseif (cur_state == FOLLOW_WALL)
@@ -248,18 +245,24 @@ end
 % [a,b] is current (x,y) position
 function [x, y, r] = adjust_dist(port, a, b, rad) 
     r = rad + AngleSensorRoomba(port)
+    if (r < 0) 
+        r = 2 * pi + r 
+    end
     d = DistanceSensorRoomba(port);
     x = a+(d*cos(rad)) % values will be displayed
     y = b+(d*sin(rad))
 end
 
+% stores a point's coordinates
 function [new_xs, new_ys] = save_point(x, y, old_xs, old_ys)
     new_xs = [old_xs, x];
     new_ys = [old_ys, y];
 end
 
+% plots the path the robot took
 function plot_path(xs, ys)
-    f = figure('Visible','on','Position',[100,100,600,600], 'menubar', 'none', 'name', 'Roomba Path: Team 4', 'resize', 'off') ;
+    f = figure('Visible','on','Position',[100,100,600,600],'menubar', ...
+               'none', 'name', 'Roomba Path: Team 4', 'resize', 'off');
     hPlotAxes = axes(...    % Axes for plotting the selected plot
                 'Parent', f, ...
                 'Units', 'normalized', ...
@@ -270,7 +273,4 @@ function plot_path(xs, ys)
                  'XGrid', 'on', 'YGrid', 'on');
     c = linspace(1,10,length(xs));
     scatter (xs, ys, 20, c, 'filled');
-    
-   
-
 end
