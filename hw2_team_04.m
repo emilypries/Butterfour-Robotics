@@ -124,12 +124,11 @@ goal_dist = 4;
     
     while (true)
         
-        % updates the timer and space values
+        % updates the space values
         
         [x, y, r] = adjust_dist(serPort, x, y, r);
         [xs, ys] = save_point(x, y, xs, ys);
-        hx
-        hy
+        
         % checks if robot re-encounters the m-line OR
         % if it reaches the goal OR if it returns to the
         %                           original hit-point
@@ -175,7 +174,7 @@ goal_dist = 4;
                 cur_state = FOLLOW_WALL;
                 SetDriveWheelsCreate(serPort, 0, 0);
             elseif ((timer > ang_time + 2) && (r > spin_angle - (pi/36))...
-                    && r < spin_angle + (pi/36))
+                    && (r < spin_angle + (pi/36)))
                 cur_state = TURN_CORNER;
             end      
             
@@ -223,7 +222,14 @@ goal_dist = 4;
     
     lx = x;
     ly = y;
-    turnAngle(serPort, .075, -r*(180/pi));
+    SetDriveWheelsCreate(serPort, 0.0, 0.0);
+    pause(0.05);
+    SetDriveWheelsCreate(serPort, 0.1, -0.1);
+    while (~((r < (pi/36)) && (r > (-pi/36))))
+        [x, y, r] = adjust_dist(serPort, x, y, r)
+        pause(0.05);
+    end
+    %turnAngle(serPort, .075, -r*(180/pi));
     AngleSensorRoomba(serPort);
     [x, y, r] = adjust_dist(serPort, x, y, r)
     [xs, ys] = save_point(x, y, xs, ys);
@@ -234,6 +240,12 @@ end
 % [a,b] is current (x,y) position
 function [x, y, r] = adjust_dist(port, a, b, rad) 
     r = rad + AngleSensorRoomba(port)
+    if (r < 0)
+        r = r + (2*pi)
+    end
+    if (r > 2*pi)
+        r = r - (2*pi)
+    end
     d = DistanceSensorRoomba(port);
     x = a+(d*cos(rad)) % values will be displayed
     y = b+(d*sin(rad))
@@ -253,11 +265,11 @@ function plot_path(xs, ys)
                 'Parent', f, ...
                 'Units', 'normalized', ...
                 'HandleVisibility','callback', ...
-                 'Position',[0.1 0.1 0.8 0.8], ...
-                 'XLim', [(min(xs) - .5), (max(xs) + .5)], ... 
-                 'YLim', [(min(ys) - .5), (max(ys) + .5)], ...
-                 'NextPlot', 'replacechildren', ...
-                 'XGrid', 'on', 'YGrid', 'on');
+                'Position',[0.1 0.1 0.8 0.8], ...
+                'XLim', [(min(xs) - .5), (max(xs) + .5)], ...
+                'YLim', [(min(ys) - .5), (max(ys) + .5)], ...
+                'NextPlot', 'replacechildren', ...
+                'XGrid', 'on', 'YGrid', 'on');
     c = linspace(1,10,length(xs));
     scatter (xs, ys, 20, c, 'filled');
 end
