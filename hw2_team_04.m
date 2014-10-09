@@ -116,7 +116,7 @@ goal_dist = 4;
     timer       = 0;
     crnr_angle  = 0;
     spin_angle  = 0;
-    turn_adjust = pi;
+    %turn_adjust = 2*pi;
     first_time  = true;
     
     % cur_state tracks current state
@@ -128,7 +128,8 @@ goal_dist = 4;
         
         [x, y, r] = adjust_dist(serPort, x, y, r);
         [xs, ys] = save_point(x, y, xs, ys);
-        
+        hx
+        hy
         % checks if robot re-encounters the m-line OR
         % if it reaches the goal OR if it returns to the
         %                           original hit-point
@@ -162,6 +163,7 @@ goal_dist = 4;
                 tic;
                 first_time = false;
             end
+            ang_time = toc;
             
         % stops spinnning when wall is found
         %
@@ -169,22 +171,13 @@ goal_dist = 4;
         % to try again until wall is found
         elseif (cur_state == FIND_WALL)
             display('state: spinning in place');
-            spin_angle
             if (WallSensor && ~BumpRight && ~BumpFront)
                 cur_state = FOLLOW_WALL;
                 SetDriveWheelsCreate(serPort, 0, 0);
-            elseif (abs(spin_angle - r) > turn_adjust)
-                SetDriveWheelsCreate(serPort, -0.05, 0.05);
-                cur_state = TURN_BACK;
-            end
- 
-        % turns back to original collision angle
-        elseif(cur_state == TURN_BACK)
-            display('state: spinning back');
-            if(r > spin_angle - pi/180 && r < spin_angle + pi/180)
-                SetDriveWheelsCreate(serPort, 0, 0);
+            elseif ((timer > ang_time + 2) && (r > spin_angle - (pi/36))...
+                    && r < spin_angle + (pi/36))
                 cur_state = TURN_CORNER;
-            end          
+            end      
             
         % robot moves straight along wall
         elseif (cur_state == FOLLOW_WALL)
@@ -206,7 +199,7 @@ goal_dist = 4;
         elseif (cur_state == TURN_CORNER)
             display('state: relocating wall / turning corner');
             SetDriveWheelsCreate(serPort, 0.1, 0.1);
-            pause(0.7);
+            pause(0.5);
             [x, y, r] = adjust_dist(serPort, x, y, r);
             [xs, ys] = save_point(x, y, xs, ys);
             SetDriveWheelsCreate(serPort, 0, 0.1);
@@ -230,7 +223,7 @@ goal_dist = 4;
     
     lx = x;
     ly = y;
-    turnAngle(serPort, .2, -r*(180/pi));
+    turnAngle(serPort, .075, -r*(180/pi));
     AngleSensorRoomba(serPort);
     [x, y, r] = adjust_dist(serPort, x, y, r)
     [xs, ys] = save_point(x, y, xs, ys);
@@ -241,12 +234,6 @@ end
 % [a,b] is current (x,y) position
 function [x, y, r] = adjust_dist(port, a, b, rad) 
     r = rad + AngleSensorRoomba(port)
-    if (r < 0) 
-        r = 2 * pi + r 
-    end
-    if (r > 2 * pi)
-        r = r - (2 * pi)
-    end
     d = DistanceSensorRoomba(port);
     x = a+(d*cos(rad)) % values will be displayed
     y = b+(d*sin(rad))
@@ -267,8 +254,8 @@ function plot_path(xs, ys)
                 'Units', 'normalized', ...
                 'HandleVisibility','callback', ...
                  'Position',[0.1 0.1 0.8 0.8], ...
-                 'XLim', [min(xs) - .5, max(xs) + .5], ... 
-                 'YLim', [min(ys) - .5, max(ys) + .5], ...
+                 'XLim', [(min(xs) - .5), (max(xs) + .5)], ... 
+                 'YLim', [(min(ys) - .5), (max(ys) + .5)], ...
                  'NextPlot', 'replacechildren', ...
                  'XGrid', 'on', 'YGrid', 'on');
     c = linspace(1,10,length(xs));
