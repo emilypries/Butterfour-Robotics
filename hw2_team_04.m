@@ -67,8 +67,8 @@ goal_dist = 4;
             
         elseif (curr_state == FOLLOW_OBJ)
             display('state: circumnavigating object');
-            [x_pos, y_pos, xs, ys] = hw2_follow(serPort, x_pos, y_pos, r_ang,...
-                                        hit_x_pos, hit_y_pos, xs, ys);
+            [x_pos, y_pos, xs, ys] = hw2_follow(serPort, x_pos, y_pos,... 
+                                    r_ang, hit_x_pos, hit_y_pos, xs, ys);
             % checks if back at m-line and closer to goal
             if ((y_pos > -err && y_pos < err...
                  && (x_pos > hit_x_pos + err || x_pos < hit_x_pos - err)...
@@ -110,13 +110,11 @@ goal_dist = 4;
     END_WALL    = 3;
     TURN_CORNER = 4;
     END_CORNER  = 5;
-    TURN_BACK   = 6;
 
     % vars to smoothen out robot motion
     timer       = 0;
     crnr_angle  = 0;
     spin_angle  = 0;
-    %turn_adjust = 2*pi;
     first_time  = true;
     
     % cur_state tracks current state
@@ -124,8 +122,7 @@ goal_dist = 4;
     
     while (true)
         
-        % updates the space values
-        
+        % updates the space values        
         [x, y, r] = adjust_dist(serPort, x, y, r);
         [xs, ys] = save_point(x, y, xs, ys);
         
@@ -155,7 +152,7 @@ goal_dist = 4;
         % starts spinning in place after a bump
         if (cur_state == BUMP_FOUND)
             display('state: bumped')
-            SetDriveWheelsCreate(serPort, 0.2, -0.2);
+            SetDriveWheelsCreate(serPort, 0.09, -0.09);
             cur_state = FIND_WALL;
             spin_angle = r;
             if (first_time)
@@ -173,7 +170,7 @@ goal_dist = 4;
             if (WallSensor && ~BumpRight && ~BumpFront)
                 cur_state = FOLLOW_WALL;
                 SetDriveWheelsCreate(serPort, 0, 0);
-            elseif ((timer > ang_time + 2) && (r > spin_angle - (pi/36))...
+            elseif ((timer > ang_time + 2) && (r > spin_angle - (pi/18))...
                     && (r < spin_angle + (pi/18)))
                 cur_state = TURN_CORNER;
             end      
@@ -197,8 +194,8 @@ goal_dist = 4;
         % robot goes fwd and spins about right wheel when wall is lost
         elseif (cur_state == TURN_CORNER)
             display('state: relocating wall / turning corner');
-            SetDriveWheelsCreate(serPort, 0.1, 0.1);
-            pause(0.5);
+            SetDriveWheelsCreate(serPort, 0.075, 0.075);
+            pause(0.7);
             [x, y, r] = adjust_dist(serPort, x, y, r);
             [xs, ys] = save_point(x, y, xs, ys);
             SetDriveWheelsCreate(serPort, 0, 0.1);
@@ -222,14 +219,8 @@ goal_dist = 4;
     
     lx = x;
     ly = y;
-    %SetDriveWheelsCreate(serPort, 0.0, 0.0);
-    %pause(0.05);
-    %etDriveWheelsCreate(serPort, 0.1, -0.1);
-    %while (~((r < (pi/36)) && (r > (-pi/36))))
-    %    [x, y, r] = adjust_dist(serPort, x, y, r)
-    %    pause(0.05);
-    %end
-    turnAngle(serPort, .075, -r*(180/pi));
+    % NOTE: turnAngle is slower on simulator than in real robot
+    turnAngle(serPort, .05, -r*(180/pi));
     AngleSensorRoomba(serPort);
     [x, y, r] = adjust_dist(serPort, x, y, r)
     [xs, ys] = save_point(x, y, xs, ys);
@@ -258,6 +249,9 @@ function [new_xs, new_ys] = save_point(x, y, old_xs, old_ys)
 end
 
 % plots the path the robot took
+% plot can spout two sets of overlaid axes at times, but the
+% coordinates of the path remain accurate with respect to one
+% of the sets
 function plot_path(xs, ys)
     f = figure('Visible','on','Position',[100,100,600,600],'menubar', ...
                'none', 'name', 'Roomba Path: Team 4', 'resize', 'off');
