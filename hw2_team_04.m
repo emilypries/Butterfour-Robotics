@@ -155,7 +155,7 @@ goal_dist = 4;
         % starts spinning in place after a bump
         if (cur_state == BUMP_FOUND)
             display('state: bumped')
-            SetDriveWheelsCreate(serPort, 0.1, -0.1);
+            SetDriveWheelsCreate(serPort, 0.2, -0.2);
             cur_state = FIND_WALL;
             spin_angle = r;
             if (first_time)
@@ -174,7 +174,7 @@ goal_dist = 4;
                 cur_state = FOLLOW_WALL;
                 SetDriveWheelsCreate(serPort, 0, 0);
             elseif ((timer > ang_time + 2) && (r > spin_angle - (pi/36))...
-                    && (r < spin_angle + (pi/36)))
+                    && (r < spin_angle + (pi/18)))
                 cur_state = TURN_CORNER;
             end      
             
@@ -222,14 +222,14 @@ goal_dist = 4;
     
     lx = x;
     ly = y;
-    SetDriveWheelsCreate(serPort, 0.0, 0.0);
-    pause(0.05);
-    SetDriveWheelsCreate(serPort, 0.1, -0.1);
-    while (~((r < (pi/36)) && (r > (-pi/36))))
-        [x, y, r] = adjust_dist(serPort, x, y, r)
-        pause(0.05);
-    end
-    %turnAngle(serPort, .075, -r*(180/pi));
+    %SetDriveWheelsCreate(serPort, 0.0, 0.0);
+    %pause(0.05);
+    %etDriveWheelsCreate(serPort, 0.1, -0.1);
+    %while (~((r < (pi/36)) && (r > (-pi/36))))
+    %    [x, y, r] = adjust_dist(serPort, x, y, r)
+    %    pause(0.05);
+    %end
+    turnAngle(serPort, .075, -r*(180/pi));
     AngleSensorRoomba(serPort);
     [x, y, r] = adjust_dist(serPort, x, y, r)
     [xs, ys] = save_point(x, y, xs, ys);
