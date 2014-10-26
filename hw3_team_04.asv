@@ -17,7 +17,7 @@ function hw3_team_04(serPort)
     % margin of error for position
     err = 0.5;
     % time given to update cell
-    timeout = 30;
+    timeout = 60;
     
     % space descriptors of robot
     x_pos = 0;
@@ -47,12 +47,10 @@ function hw3_team_04(serPort)
         
         [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, r_ang);
 
-        t = toc
-        
         if (cur_state == RAND_DIR)
             display('State: Choosing direction!!'); 
             %Checks if moves are available
-            %t = toc;
+            t = toc;
 
             dir = rand(2, 1) * 2 - 1;
             [row, col] = s2g(x_pos + dir(1), y_pos + dir(2), size);
@@ -71,12 +69,12 @@ function hw3_team_04(serPort)
             cur_state = RAND_MOV;
         elseif (cur_state == RAND_MOV)
             display('State: Moving in direction!!');
-            %tic;
+            tic;
             SetDriveWheelsCreate(serPort, 0.1, 0.1);
             cur_state = FIND_OBJ;
         elseif (cur_state == FIND_OBJ)
             display('State: Finding Object!!');
-            %t = toc
+            t = toc
             [BumpRight, BumpLeft, WheDropRight, WheDropLeft,...
              WheDropCaster, BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
             [row, col] = s2g(x_pos, y_pos, size)

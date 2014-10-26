@@ -238,8 +238,8 @@ function [x, y, r] = adjust_dist(port, a, b, rad)
         r = r - (2*pi)
     end
     d = DistanceSensorRoomba(port);
-    x = a+(d*cos(rad)) % values will be displayed
-    y = b+(d*sin(rad))
+    x = a+(d*cos(rad))/0.35 % values will be displayed
+    y = b+(d*sin(rad))/0.35
 end
 
 % stores a point's coordinates
