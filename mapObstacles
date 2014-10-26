@@ -11,9 +11,9 @@ function mapObstacles(matrix)
    for row = 1:10
        for col = 1:10
            if (matrix(row,col) == 1)
-               rectangle('Position',[col-1,row-1,1,1], 'FaceColor','r');
+               rectangle('Position',[col-1,(11-row)-1,1,1], 'FaceColor','r');
            else
-               rectangle('Position',[col-1,row-1,1,1], 'FaceColor','w');
+               rectangle('Position',[col-1,(11-row)-1,1,1], 'FaceColor','w');
            end
        end
    end   
