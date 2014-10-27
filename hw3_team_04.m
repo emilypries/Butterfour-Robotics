@@ -14,8 +14,6 @@
 % serPort is robot object returned by RoombaInit
 function hw3_team_04(serPort)
 
-    % margin of error for position
-    err = 0.5;
     % time given to update cell
     timeout = 60;
     
@@ -39,7 +37,7 @@ function hw3_team_04(serPort)
     
     % initialize occupancy grid
     global size;
-    size = 16;
+    size = 10;
     global cells;
     cells = zeros(size);
     
@@ -48,56 +46,49 @@ function hw3_team_04(serPort)
     while(t < timeout)
         
         [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, r_ang);
-
-        t = toc
-        
+        t = toc;
         if (cur_state == RAND_DIR)
-            display('State: Choosing direction!!'); 
+            display('state: choosing direction'); 
             %Checks if moves are available
-            %t = toc;
-
             dir = rand(2, 1) * 2 - 1;
-            [row, col] = s2g(x_pos + 1.5*dir(1), y_pos + 1.5*dir(2), size);
-            
+            [row, col] = s2g(x_pos + 2*dir(1), y_pos + 2*dir(2), size);
             if (~(row < 1 || row > size || col < 1 || col > size) &&...
                  (cells(row, col) == 0))
                 cur_state = RAND_ROT;
-            end
-                         
+            end                
         elseif (cur_state == RAND_ROT)
-            display('State: Rotating to direction!!');
+            display('state: rotating to direction');
             dir_ang = atan2(dir(2), dir(1));
-            turn_ang = (dir_ang - r_ang)*180/pi
+            turn_ang = (dir_ang - r_ang)*180/pi;
             turnAngle(serPort, 0.2, turn_ang);
             [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, r_ang);
             cur_state = RAND_MOV;
         elseif (cur_state == RAND_MOV)
-            display('State: Moving in direction!!');
-            %tic;
+            display('state: moving in chosen direction');
+            move_timer = t;
             SetDriveWheelsCreate(serPort, 0.2, 0.2);
             cur_state = FIND_OBJ;
         elseif (cur_state == FIND_OBJ)
-            display('State: Finding Object!!');
-            %t = toc
+            display('state: finding an object');
             [BumpRight, BumpLeft, WheDropRight, WheDropLeft,...
              WheDropCaster, BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
-            [row, col] = s2g(x_pos, y_pos, size)
-            if((row < 1 || row > size || col < 1 || col > size) ||...
-                (cells(row, col) == 1))
+            [row, col] = s2g(x_pos, y_pos, size);
+            if((move_timer + 2 < t) && ((row < 1 || row > size || col < 1 ...
+                || col > size) || (cells(row, col) == 1)))
                 cur_state = RET_PREV;
             elseif(BumpRight || BumpLeft || BumpFront)
                 SetDriveWheelsCreate(serPort, 0.0, 0.0);
                 cur_state = MARK_OBJ;
             end
-        elseif(cur_state == MARK_OBJ)
-            display('State: Marking the grid!!');
+        elseif (cur_state == MARK_OBJ)
+            display('state: marking the grid');
             [x_pos, y_pos, r_ang] = hw3_follow(serPort, x_pos, y_pos, r_ang);
             tic;
             cur_state = RET_PREV;
-        elseif(cur_state == RET_PREV)
-            display('State: Returning to previous cell!! :)');
+        elseif (cur_state == RET_PREV)
+            display('state: returning to previous cell');
             SetDriveWheelsCreate(serPort, -0.1, -0.1);
-            pause(2);
+            pause(.7);
             SetDriveWheelsCreate(serPort, 0.0, 0.0);
             [x_pos, y_pos, r_ang] = adjust_dist(serPort, x_pos, y_pos, r_ang);
             cur_state = RAND_DIR;     
@@ -112,39 +103,30 @@ function hw3_team_04(serPort)
 
 end
 
-
+% updates the spatial descriptors
 function [x, y, r] = adjust_dist(port, a, b, rad) 
-    r = rad + AngleSensorRoomba(port)
+    r = rad + AngleSensorRoomba(port);
     if (r < 0)
-        r = r + (2*pi)
+        r = r + (2*pi);
     end
     if (r > 2*pi)
-        r = r - (2*pi)
+        r = r - (2*pi);
     end
-    d = DistanceSensorRoomba(port);
-    x = a+(d*cos(rad)/0.35) % values will be displayed
-    y = b+(d*sin(rad)/0.35)
+    d = DistanceSensorRoomba(port)/.35;
+    x = a+d*cos(rad) % values will be displayed
+    y = b+d*sin(rad)
 end
 
+% expresses spatial coordinates as grid cells
 function [row, col] = s2g(xs, ys, size)
     col = (size/2 + 1) + floor(xs);
     row = (size/2) - floor(ys);
 end
 
+% prints out the occupancy grid
 function mapObstacles(matrix, size)
-    f = figure('Visible','on','Position',[100,100,600,600], 'menubar', 'none', 'name', 'Team 4', 'resize', 'off');
-    hPlotAxes = axes(...    % Axes for plotting the selected plot
-                'Parent', f, ...
-                'Units', 'normalized', ...
-                'HandleVisibility','callback', ...
-<<<<<<< HEAD
-                'Position',[.05 .05 0.8 0.8], ...
-=======
-                'Position',[0.05 0.05 .8 .8], ...
->>>>>>> origin/master
-                 'XLim', [0,size], 'YLim', [0, size], ...
-                 'NextPlot', 'add', ...
-                 'XGrid', 'on', 'YGrid', 'on');
+    f = figure('Visible','on','Position',[100 100 600 600], 'menubar', ...
+               'none', 'name', 'Team 4', 'resize', 'off');
    for row = 1:size
        for col = 1:size
            if (matrix(row,col) == 1)
@@ -154,20 +136,18 @@ function mapObstacles(matrix, size)
            end
        end
    end   
-   grid on;
 end
 
 
-% controls iRobot to circumvent an object/wall in the way from goal
-% takes the args: positional descriptors and hit-point coordinates
-% returns: leave-point coordinates
+% follows object encountered during grid mapping
+% labels all cells encountered as occupied
 % serPort is robot object returned by RoombaInit
 function [x, y, r] = hw3_follow(serPort, x, y, r)
 global cells;
 global size;
-global err;
+
 % margin of error used in positional operations
-err = .15;
+err = .5;
 
     % states of robot during process
     BUMP_FOUND  = 0;
@@ -197,20 +177,19 @@ err = .15;
         % updates the space values        
         [x, y, r] = adjust_dist(serPort, x, y, r);
         
-        % checks if robot re-encounters the m-line OR
-        % if it reaches the goal OR if it returns to the
-        %                           original hit-point
-        %
+        % checks if robot returns to the
+        % original hit-point
         % allows for error margin of .1 meters
         if ((timer > 15 && x > hx - err && x < hx + err...
                         && y > hy - err && y < hy + err))
-            display('Back at hit point');
+            display('back at hit point');
             break;
         end
         
         [row, col] = s2g(x, y, size);
-        if(cells(row,col) == 1)
-            display('Already marked');
+        if(row > size || row < 1 || col > size || col < 1 ||...
+           cells(row,col) == 1)
+            display('already marked');
             break;
         end
         
