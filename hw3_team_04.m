@@ -37,7 +37,7 @@ function hw3_team_04(serPort)
     
     % initialize occupancy grid
     global size;
-    size = 10;
+    size = 24;
     global cells;
     cells = zeros(size);
     
