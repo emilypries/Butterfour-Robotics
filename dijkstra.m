@@ -19,28 +19,49 @@ function dijkstra
     %index 2 = goal
     
     pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
-    plot(pa(:,1), pa(:,2))
     [palength, pawidth] = size(pa);
     dist_array = calc_all_dists(pa);
+    
+    % Draw Visibility Graph
+    for i = 1:palength
+        for j = i+1:palength
+            if (dist_array(i,j) < inf)
+                %TODO: draw line from pa(i,1) pa(i,2) to pa(j,1) pa (j,2)
+            end
+        end
+    end
+    
+    % Dijkstra's Algorithm
+    % Initialize Variables:
     visited = zeros(1,palength);
     distances = inf(1,palength);
-    %first, set the first cycle
-    distances(1) = 0;
-    visited(1) = 1;
-    current = 1;
     currdist = 0;
+    
+    % Set up Cycle 1
+    distances(1) = 0;
+    current = 1;
     path = [1];
+    
     while true
+        % Mark current vertex as visited
         visited(current) = 1;
-        for i = 1:palength %update distances
+        
+        
+        
+        % Update best distances so far
+        for i = 1:palength
             if (visited(i)==0 && distances(i)> (currdist + dist_array(i,current)))
                 distances(i) = currdist + dist_array(i,current);
             end
         end
         
+        % If we have reached the path or if we have just visited the goal,
+        % break
         if((all(visited  == visited(1))) || visited(2)==1)
             break;
         end
+        
+        % Pick the next vertex with the minimum distance
         tmin = inf;
         tcurr = 0;
         for i = 1:palength
@@ -49,28 +70,52 @@ function dijkstra
                 tcurr = i;
             end
         end
+        
+        % If we cannot go anywhere else, break
         if (tcurr == 0)
             break;
         end
+        
+        if (dist_array(current,2) < inf)
+            disp(dist_array(current,2))
+            currdist = currdist + dist_array(current,2);
+            path = [path, 2];
+            break;
+        end
+        
+        %Update conditions for next loop
         current = tcurr;
         currdist = currdist + tmin;
         path = [path, current];
     end
+  
     disp (path)
+    disp (currdist)
+    % Draw the Path
+    [pathrow, pathlength] = size(path);
+    for i = 1:(pathlength-1)
+        %TODO: draw a line from pa(i,1) pa(i,2) to pa(i+1,1) pa(i+1,2)
+    end
 end
 
-function dist_array = calc_all_dists(point_array)
-    %create nxn matrix of points
-    %atoa atob atoc atod atoe
-    %btoa btob btoc btod btoe
+function dist_array2 = calc_all_dists(point_array)
+    % dist_array creates a matrix with the distances between all vertices.
+    % If a vertex is unreachable from another or is connecting to itself,
+    % the edge distance is Inf
     
+    % Initialize arrays
     [palength, pawidth] = size(point_array);
     dist_array = [];
     dist_row = [];
+    
+    % Build the raw array (calculate distances for all edges regardless of
+    % crossing)
     for i = 1:palength
         for j = 1:palength
+            % If a vertex is connect to itself, the distance is infinite
             if i == j
                 dist_row = [dist_row, inf];
+            % Otherwise, calculate the distance
             else
             dist_row = [dist_row, get_dist(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2))];
             end
@@ -78,12 +123,18 @@ function dist_array = calc_all_dists(point_array)
         dist_array = [dist_array; dist_row];
         dist_row = [];
     end
+    
     disp(dist_array)
+    
+    % Build the distance array with Infs for unusable edges (edges which
+    % cross any other edge AKA are inside of  an obstacle)
     dist_array2 = dist_array;
     for i = 1:palength
         for j = 1:palength
             for k = 1:palength
                 for l = 1:palength
+                    % If the two edges formed by i,j to k,l cross, the
+                    % distance is Inf
                     if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(k,1), point_array(k,2), point_array(l,1), point_array(l,2))
                         dist_array2(i,j) = inf;
                         dist_array2(j,i) = inf;
@@ -93,19 +144,20 @@ function dist_array = calc_all_dists(point_array)
                 end
             end
         end
-        end
+    end
     disp new:
     disp(dist_array2)
-    %cool now we have the distance array
-
-    
 end
     
 function dist = get_dist(x1, y1, x2, y2)
+    % get_dist calculates the distance between two points
     dist = sqrt(((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1)));
 end
 
 function isit = check_cross(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy)
+    % check_cross returns true if two line segments cross by calculating
+    % the dot product and crossing point (if one exists), then checking to
+    % see if the crossing point is on the line segments
     a = [Ax, Ay];
     c = [Cx, Cy];
     e = [Bx - Ax, By - Ay];
@@ -116,6 +168,10 @@ function isit = check_cross(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy)
         return;
     end
     h = ( dot((a - c),p) )/( dot(f,p) );
+    if (h < 0 || h > 1)
+        isit = false;
+        return;
+    end
     cross = c+f*h;
     crx = cross(1);
     cry = cross(2);       
