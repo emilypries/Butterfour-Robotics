@@ -81,7 +81,7 @@ function path_planner(obj_file, pts_file)
             end    
             obj_v(j, :) = [x+center(1), y+center(2)];
         end
-        grownmatrix = [grownmatrix; obj_v];
+        %grownmatrix = [grownmatrix; convex_hull(obj_v)];
         rows = rows + supernums(i);
        
     end
