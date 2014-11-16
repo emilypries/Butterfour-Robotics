@@ -15,7 +15,6 @@
 function path_planner(obj_file, pts_file)
     supermatrix = [];
     supernums   = [];
-    ROOMBA_DIAM = 0.35;
 
     points = fopen(pts_file);
     line = fgetl(points);
@@ -76,19 +75,10 @@ function path_planner(obj_file, pts_file)
             xy = xy - center;
             x = xy(1); y = xy(2);
             if(x < 0)
-                x = x - ROOMBA_DIAM;
                 if(y < 0)
-                    y = y - ROOMBA_DIAM;
-                elseif(y > 0)
-                    y = y + ROOMBA_DIAM;
-                end 
-            elseif(x > 0)
-                x = x + ROOMBA_DIAM;
-                if(y < 0)
-                    y = y - ROOMBA_DIAM;
-                elseif(y > 0)
-                    y = y + ROOMBA_DIAM;
-                end 
+                    
+            else
+                
             end
             
             
