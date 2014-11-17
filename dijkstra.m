@@ -25,6 +25,7 @@ function [path, currdist, dist_array] = dijkstra(pa)
     % Initialize Variables:
     visited = zeros(1,palength);
     distances = inf(1,palength);
+    bestway = zeros(1,palength);
     currdist = 0;
     
     % Set up Cycle 1
@@ -35,6 +36,8 @@ function [path, currdist, dist_array] = dijkstra(pa)
     while true
         % Mark current vertex as visited
         visited(current) = 1;
+        visited
+        distances
         
         
         
@@ -42,6 +45,7 @@ function [path, currdist, dist_array] = dijkstra(pa)
         for i = 1:palength
             if (visited(i)==0 && distances(i)> (currdist + dist_array(i,current)))
                 distances(i) = currdist + dist_array(i,current);
+                bestway(i) = current;
             end
         end
         
@@ -56,15 +60,22 @@ function [path, currdist, dist_array] = dijkstra(pa)
         tmin = inf;
         tcurr = 0;
         for i = 1:palength
-            if (visited(i) == 0 && distances(i)<tmin)
+            if visited(i)==1
+                continue
+            end
+            if (distances(i)<tmin && distances(i)~=0)
                 tmin = distances(i);
                 tcurr = i;
             end
         end
+        if tcurr == 0
+            disp('did not find a min')
+            break;
+        end
         
-        % If we cannot go anywhere else, break
-        if (tcurr == 0)
-            disp('nowhere else to go')
+        % If we got to the goal, break
+        if (tcurr == 2)
+            disp('found goal')
             break;
         end
         
@@ -80,9 +91,21 @@ function [path, currdist, dist_array] = dijkstra(pa)
         currdist = currdist + tmin;
         path = [path, current];
     end
+    if (visited(2)==1)
+        visited2 = zeros(1,palength);
+        path = [];
+        currfrom = 2;
+        while currfrom ~= 1
+            visited2(currfrom) = 1;
+            path = [currfrom, path];
+            currfrom = bestway(currfrom);
+        end
+    end
+    visited
+    bestway
   
-    disp (path)
-    disp (currdist)
+    path
+    currdist
     
 end
 
