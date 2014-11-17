@@ -16,7 +16,7 @@
 function path_planner(obj_file, pts_file)
     supermatrix = [];   % holds object vertices in order read from file
     supernums   = [];   % holds number of vertices per object 
-    ROOMBA_DIAM = 0.35;   % diamater of roomba
+    ROOMBA_DIAM = 0.35; % diamater of roomba
 
     % get start and goal points from pts_file
     points = fopen(pts_file);
@@ -55,6 +55,8 @@ function path_planner(obj_file, pts_file)
     
     grownmatrix = [];    % holds grown object vertices
     
+    % treating the roomba as a square, the would-be reflection is the same
+    % we grow the objects with this 'reflection' of robot
     rows = 0;
     for i = 1:nobj
         obj_v = [supermatrix(rows+1:rows+supernums(i),1),...
@@ -82,6 +84,7 @@ function path_planner(obj_file, pts_file)
             obj_v(j, :) = [x+center(1), y+center(2)];
         end
         obj_v
+        % convex hull of grown object
         grownmatrix = [grownmatrix; convex_hull(obj_v)];
         rows = rows + supernums(i);
        
