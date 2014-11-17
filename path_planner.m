@@ -86,6 +86,11 @@ function path_planner(obj_file, pts_file)
         rows = rows + supernums(i);
        
     end
+    %Run dijkstra
+    [path, path_dist, dist_array] = dijkstra([start; goal; grownmatrix]);
+    pa = [start; goal; grownmatrix];
+    [palength, pawidth] = size(pa);
+    disp(dist_array)
     
     % create visibility graph
     fh = figure('Name', 'Map');    
@@ -100,6 +105,22 @@ function path_planner(obj_file, pts_file)
              supermatrix(rows+1:rows+supernums(n),2),...
              'r')
          rows = rows + supernums(n);
+    end
+    % Draw Visibility Graph
+    for i = 1:palength
+        for j = i:palength
+            if (dist_array(i,j) < inf)
+                %TODO: draw line from pa(i,1) pa(i,2) to pa(j,1) pa (j,2)
+                disp('drew edge')
+                plot([pa(i,1), pa(j,1)], [pa(i,2), pa(j,2)], 'k');
+            end
+        end
+    end
+    % Draw the Path
+    [pathrow, pathlength] = size(path);
+    for i = 1:(pathlength-1)
+        disp('drew path edge')
+        plot([pa(path(i),1), pa(path(i+1),1)],[pa(path(i),2), pa(path(i+1),2)], 'm');
     end
     plot(start(1), start(2), '+', 'markersize', 13);
     plot(goal(1), goal(2), '+', 'markersize', 13);
