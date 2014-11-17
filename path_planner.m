@@ -81,7 +81,8 @@ function path_planner(obj_file, pts_file)
             end    
             obj_v(j, :) = [x+center(1), y+center(2)];
         end
-        grownmatrix = [grownmatrix; obj_v];
+        obj_v
+        grownmatrix = [grownmatrix; convex_hull(obj_v)];
         rows = rows + supernums(i);
        
     end
@@ -106,18 +107,18 @@ function path_planner(obj_file, pts_file)
     
               
 end
-%{
+
 % grows an obstacle given the object's vertex coordinates
 function grown = convex_hull(coords)
     % find the rightmost, lowest point of object, p_zero
     p_zero = coords(1,:);
     for i=2:size(coords,1)
         new_p = coords(i,:);
-        if new_p(1) > p_zero(1) && new_p(2) < p_zero(2)
+        if new_p(1) >= p_zero(1) && new_p(2) <= p_zero(2)
             p_zero = new_p;
         end
     end
-    
+    p_zero
     [boo,idx] = ismember(p_zero, coords, 'rows');
     rest_ps = [coords(1:idx-1, :);...
                coords(idx+1:size(coords,1), :)];
@@ -150,8 +151,20 @@ function grown = convex_hull(coords)
             end
         end
     end
-    
-    
-    
+    sorted_ps
+    size_ps = size(sorted_ps, 1);
+    grown = [p_zero;sorted_ps(size_ps,1:2)];
+    for n = 1:size_ps-1
+        le_size = size(grown)
+        v = grown(1,:)-grown(2,:);
+        ang = -(acos(dot(baseline, v)/norm(v)));
+        pt = sorted_ps(n,1:2)-grown(2,:)
+        pt = ([cos(ang), -sin(ang); sin(ang), cos(ang)]*pt')'
+        if pt(2) > 0
+            grown = [sorted_ps(n, 1:2); grown]
+        else
+            grown = grown(2:size(grown,1),:)
+        end
+    end
+
 end
-%}
