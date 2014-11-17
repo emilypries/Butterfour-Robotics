@@ -12,24 +12,14 @@
     
 % calculates shortest path using dijkstra's algorithm
 
-function dijkstra
-    %dijkstra(pa,start,goal)
-    %need to add start and goal to array)
-    %index 1 = start
-    %index 2 = goal
+function [path, currdist, dist_array] = dijkstra(pa)
+
     
-    pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
+   % pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
     [palength, pawidth] = size(pa);
     dist_array = calc_all_dists(pa);
     
-    % Draw Visibility Graph
-    for i = 1:palength
-        for j = i+1:palength
-            if (dist_array(i,j) < inf)
-                %TODO: draw line from pa(i,1) pa(i,2) to pa(j,1) pa (j,2)
-            end
-        end
-    end
+    
     
     % Dijkstra's Algorithm
     % Initialize Variables:
@@ -57,7 +47,8 @@ function dijkstra
         
         % If we have reached the path or if we have just visited the goal,
         % break
-        if((all(visited  == visited(1))) || visited(2)==1)
+        if(all(visited  == visited(1)))
+            disp('visited all nodes')
             break;
         end
         
@@ -73,13 +64,14 @@ function dijkstra
         
         % If we cannot go anywhere else, break
         if (tcurr == 0)
+            disp('nowhere else to go')
             break;
         end
         
         if (dist_array(current,2) < inf)
-            disp(dist_array(current,2))
             currdist = currdist + dist_array(current,2);
             path = [path, 2];
+            disp('reached the goal')
             break;
         end
         
@@ -91,11 +83,7 @@ function dijkstra
   
     disp (path)
     disp (currdist)
-    % Draw the Path
-    [pathrow, pathlength] = size(path);
-    for i = 1:(pathlength-1)
-        %TODO: draw a line from pa(i,1) pa(i,2) to pa(i+1,1) pa(i+1,2)
-    end
+    
 end
 
 function dist_array2 = calc_all_dists(point_array)
@@ -124,15 +112,19 @@ function dist_array2 = calc_all_dists(point_array)
         dist_row = [];
     end
     
-    disp(dist_array)
+   % disp(dist_array)
+  % A B C D E F G H I J
     
     % Build the distance array with Infs for unusable edges (edges which
     % cross any other edge AKA are inside of  an obstacle)
     dist_array2 = dist_array;
+    disp ('started checking cross')
+    disp size
+    disp(palength)
     for i = 1:palength
-        for j = 1:palength
-            for k = 1:palength
-                for l = 1:palength
+        for j = i:palength
+            for k = i:palength
+                for l = i+1:palength
                     % If the two edges formed by i,j to k,l cross, the
                     % distance is Inf
                     if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(k,1), point_array(k,2), point_array(l,1), point_array(l,2))
@@ -145,8 +137,8 @@ function dist_array2 = calc_all_dists(point_array)
             end
         end
     end
-    disp new:
-    disp(dist_array2)
+    disp ('finished checking cross')
+  %  disp(dist_array2)
 end
     
 function dist = get_dist(x1, y1, x2, y2)
