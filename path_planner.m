@@ -128,8 +128,17 @@ function path_planner(obj_file, pts_file)
     plot(start(1), start(2), '+', 'markersize', 13);
     plot(goal(1), goal(2), '+', 'markersize', 13);
     camroll(90);
-    
-              
+    % Write a file containing the number and coordinates of the points
+    % in the bets planned path
+    path_file = fopen('path.txt', 'w');
+    num_pts = size(path, 1);
+    fprintf(path_file, '%d\n', num_pts);
+    fprintf(path_file, '%f %f\n', start(1), start(2));
+    for i = 1:num_pts
+        fprintf(path_file, '%f %f\n', path(i, 1), path(i, 2));
+    end
+    fprintf(path_file, '%f %f\n', goal(1), goal(2));
+    fclose(path_file);
 end
 
 % grows an obstacle given the object's vertex coordinates
