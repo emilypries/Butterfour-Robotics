@@ -12,14 +12,15 @@
     
 % calculates shortest path using dijkstra's algorithm
 
-function [path, currdist, dist_array] = dijkstra(pa)
+function [path, currdist, dist_array] = dijkstra(pa, num_obj_points)
 % need array of points including vertices of walls
 %how many points are obj points and how many are walls
     
 
    % pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
-    [palength, pawidth] = size(pa);
-    dist_array = calc_all_dists(pa);
+    %[palength, pawidth] = size(pa);
+    palength = num_obj_points;
+    dist_array = calc_all_dists(pa, num_obj_points);
     
     
     
@@ -105,13 +106,14 @@ function [path, currdist, dist_array] = dijkstra(pa)
     path = [pa(path,1), pa(path,2)];
 end
 
-function dist_array2 = calc_all_dists(point_array)
+function dist_array2 = calc_all_dists(point_array, num_obj_points)
     % dist_array creates a matrix with the distances between all vertices.
     % If a vertex is unreachable from another or is connecting to itself,
     % the edge distance is Inf
     
     % Initialize arrays
-    [palength, pawidth] = size(point_array);
+    %[palength, pawidth] = size(point_array);
+    palength = num_obj_points;
     dist_array = [];
     dist_row = [];
     
@@ -145,6 +147,17 @@ function dist_array2 = calc_all_dists(point_array)
                crosslist = [crosslist; i,j];
            end
        end
+   end
+   total_num = size(point_array,1);
+   i = num_obj_points+1;
+   disp('pre-wall')
+   while i <= total_num
+       j = i + 1;
+       if j > total_num
+           j = num_obj_points+1;
+       end
+       crosslist = [crosslist; i,j];
+       i = i+1;
    end
    crosslist
    
