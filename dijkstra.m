@@ -14,15 +14,12 @@
 
 function [path, currdist, dist_array] = dijkstra(pa, num_obj_points)
 % need array of points including vertices of walls
-%how many points are obj points and how many are walls
-    
+%how many points are obj points and how many are walls  
 
    % pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
     %[palength, pawidth] = size(pa);
     palength = num_obj_points;
     dist_array = calc_all_dists(pa, num_obj_points);
-    
-    
     
     % Dijkstra's Algorithm
     % Initialize Variables:
