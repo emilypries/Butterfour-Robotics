@@ -321,9 +321,13 @@
             objcount = objcount+1;
             real_dijkstra = [real_dijkstra; convex_return];
         end
-        real_dijkstra
+        real_points = size(real_dijkstra,1);
+        
+        for w = 1:size(vwall,1)
+            real_dijkstra = [real_dijkstra; vwall(w,1), vwall(w,2), objcount];
+        end
 
-        [path, path_dist, dist_array] = dijkstra(real_dijkstra);
+        [path, path_dist, dist_array] = dijkstra(real_dijkstra, real_points);
 
         [palength, pawidth] = size(real_dijkstra);
         disp(dist_array)    
@@ -343,8 +347,8 @@
              rows = rows + supernums(n);
         end
         % Draw Visibility Graph
-        for i = 1:palength
-            for j = i:palength
+        for i = 1:real_points
+            for j = i:real_points
                 if (dist_array(i,j) ~= inf)
                     %TODO: draw line from pa(i,1) pa(i,2) to pa(j,1) pa (j,2)
                     %disp('didnt draw:' + i + j)
@@ -362,7 +366,7 @@
         plot(start(1), start(2), '+', 'markersize', 13);
         plot(goal(1), goal(2), '+', 'markersize', 13);
         plot(real_dijkstra(:,1),real_dijkstra(:,2),'o');
-        %plot(hull_points{8}(:,1),hull_points{8}(:,2),'r*');
+        plot(hull_points{5}(:,1),hull_points{5}(:,2),'r*');
         camroll(90);
 
 
@@ -390,7 +394,8 @@
                                 norm(vect_p));
         end
 
-        rest_ps = sortrows(rest_ps, 3);
+        rest_ps = sortrows(rest_ps, 3)
+        
         sorted_ps = [];
         for k=1:size(rest_ps,1)
             if(size(sorted_ps, 1) == 0)
@@ -412,17 +417,20 @@
             end
         end
         sorted_ps
-        size_ps = size(sorted_ps, 1);
+        
+        size_ps = size(sorted_ps, 1)
         grown = [p_zero;sorted_ps(size_ps,1:2)];
         n = 1
         while n < size_ps-1
-            %grown = [sorted_ps(n, 1:2); grown] %where should this happen
             le_size = size(grown)
             v1 = grown(1,:)-grown(2,:);
-            v1 = [v1 0];
+            disp('v1 is')
+            v1 = [v1 0]
             pt = sorted_ps(n,1:2)-grown(1,:) % should this be grown(1,:) or 2
-            pt = [pt 0];
+            disp('v2 is')
+            pt = [pt 0]
 
+            
             z = cross(v1, pt)
             z(3)
 
@@ -431,6 +439,7 @@
                 n = n + 1;
             else
                 disp('Popped from stack')
+                %n = n + 1;
                 grown(1,:)
                 grown = grown(2:size(grown,1),:)
             end
