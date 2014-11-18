@@ -158,16 +158,27 @@ function dist_array2 = calc_all_dists(point_array, num_obj_points)
        end
        crosslist = [crosslist; i,j];
        i = i+1;
+       
    end
-   crosslist
+   %more invalid edges:
    
     [crosslength, crosswidth] = size(crosslist);
     % Check which edges cross internals
     disp ('started checking cross')
     disp size
     disp(palength)
+    perr = .4;
     for i = 1:palength
         for j = i:palength
+            
+            if ((point_array(i,1) > 1.5367-perr && point_array(i,1) < 1.5367+perr)  && (point_array(i,2) > -2.5860 - perr && point_array(i,2) < -2.5860 + perr ))
+                dist_array2(i,:) = inf;
+                dist_array2(:,i) = inf;
+            end
+            if ((point_array(j,1) > 1.5367-perr && point_array(j,1) < 1.5367+perr)  && (point_array(j,2) > -2.5860 - perr && point_array(j,2) < -2.5860 + perr ))
+                dist_array2(j,:) = inf;
+                dist_array2(:,j) = inf;
+            end
             for k = 1:crosslength        
                     if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(crosslist(k,1),1), point_array(crosslist(k,1),2), point_array(crosslist(k,2),1), point_array(crosslist(k,2),2))
                         dist_array2(i,j) = inf;
