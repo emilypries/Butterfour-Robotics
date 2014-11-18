@@ -13,8 +13,10 @@
 % calculates shortest path using dijkstra's algorithm
 
 function [path, currdist, dist_array] = dijkstra(pa)
-
+% need array of points including vertices of walls
+%how many points are obj points and how many are walls
     
+
    % pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
     [palength, pawidth] = size(pa);
     dist_array = calc_all_dists(pa);
@@ -36,10 +38,6 @@ function [path, currdist, dist_array] = dijkstra(pa)
     while true
         % Mark current vertex as visited
         visited(current) = 1;
-        visited
-        distances
-        
-        
         
         % Update best distances so far
         for i = 1:palength
@@ -63,7 +61,7 @@ function [path, currdist, dist_array] = dijkstra(pa)
             if visited(i)==1
                 continue
             end
-            if (distances(i)<tmin && distances(i)~=0)
+            if (distances(i)<tmin && distances(i)~=0 && distances(i) ~= inf)
                 tmin = distances(i);
                 tcurr = i;
             end
@@ -82,6 +80,7 @@ function [path, currdist, dist_array] = dijkstra(pa)
         if (dist_array(current,2) < inf)
             currdist = currdist + dist_array(current,2);
             path = [path, 2];
+            visited(2)=1;
             disp('reached the goal')
             break;
         end
@@ -91,22 +90,19 @@ function [path, currdist, dist_array] = dijkstra(pa)
         currdist = currdist + tmin;
         path = [path, current];
     end
+    path = [];
     if (visited(2)==1)
-        visited2 = zeros(1,palength);
+        %visited2 = zeros(1,palength);
         path = [];
         currfrom = 2;
         while currfrom ~= 1
-            visited2(currfrom) = 1;
-            path = [currfrom, path];
-            currfrom = bestway(currfrom);
+            %visited2(currfrom) = 1;
+            path = [currfrom, path]
+            currfrom = bestway(currfrom)
         end
+        path = [1, path];
     end
-    visited
-    bestway
-  
-    path
-    currdist
-    
+    path = [pa(path,1), pa(path,2)];
 end
 
 function dist_array2 = calc_all_dists(point_array)
@@ -136,32 +132,37 @@ function dist_array2 = calc_all_dists(point_array)
     end
     
    % disp(dist_array)
-  % A B C D E F G H I J
-    
-    % Build the distance array with Infs for unusable edges (edges which
-    % cross any other edge AKA are inside of  an obstacle)
-    dist_array2 = dist_array;
+   
+   dist_array2 = dist_array;
+   crosslist = [];
+   
+   % Find internal edges within obstacles MOVE UP TO FIRST ROUND
+   for i = 1:palength
+       for j = i+1:palength
+           if (point_array(i,3) == point_array(j,3) && (j-i ~= 1 && j-i ~= (j-point_array(j,3))))
+               dist_array2(j,i) = inf;
+               dist_array2(i,j) = inf;
+               crosslist = [crosslist; i,j];
+           end
+       end
+   end
+   crosslist
+   
+    [crosslength, crosswidth] = size(crosslist);
+    % Check which edges cross internals
     disp ('started checking cross')
     disp size
     disp(palength)
     for i = 1:palength
         for j = i:palength
-            for k = i:palength
-                for l = i+1:palength
-                    % If the two edges formed by i,j to k,l cross, the
-                    % distance is Inf
-                    if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(k,1), point_array(k,2), point_array(l,1), point_array(l,2))
+            for k = 1:crosslength        
+                    if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(crosslist(k,1),1), point_array(crosslist(k,1),2), point_array(crosslist(k,2),1), point_array(crosslist(k,2),2))
                         dist_array2(i,j) = inf;
                         dist_array2(j,i) = inf;
-                        dist_array2(k,l) = inf;
-                        dist_array2(l,k) = inf;
                     end
-                end
             end
         end
-    end
-    disp ('finished checking cross')
-  %  disp(dist_array2)
+    end    
 end
     
 function dist = get_dist(x1, y1, x2, y2)
