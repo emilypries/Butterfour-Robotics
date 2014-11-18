@@ -368,7 +368,12 @@
         plot(real_dijkstra(:,1),real_dijkstra(:,2),'o');
         plot(hull_points{5}(:,1),hull_points{5}(:,2),'r*');
         camroll(90);
-
+        f = fopen('thepath.txt','w');
+        fprintf(f, '%f\n', pathrow);
+        for i = 1:pathrow
+            fprintf(f, '%f %f\n', path(i,1), path(i, 2));
+        end
+        fclose(f);
 
     end
 
@@ -390,8 +395,9 @@
         baseline = [1 0];
         for j=1:size(rest_ps,1)
             vect_p = rest_ps(j,1:2) - p_zero(1,:);
-            rest_ps(j,3) = acos(dot(baseline,vect_p)/...
-                                norm(vect_p));
+           %rest_ps(j,3) = acos(dot(baseline,vect_p)/...
+            %                    norm(vect_p));
+            rest_ps(j, 3) = atan2(vect_p(2), vect_p(1));
         end
 
         rest_ps = sortrows(rest_ps, 3)
@@ -445,4 +451,57 @@
             end
         end
 
+    end
+    
+    function grown = convex_hull2(coords)
+        n = size(coords, 1);
+        tempmin = inf;
+        tempx = inf;
+        tempi = 0;
+        for i=1:n
+            if coords(i,2) < tempmin
+                tempi = i;
+                tempx = coords(i,1)
+                tempmin = coords(i,2); 
+            elseif coords(i,2) == tempmin
+                if coords(i,1) > tempx
+                    tempi = i;
+                    tempx = coords(i,1)
+                    tempmin = coords(i,2); 
+                end
+            end
+        end
+        tempp = coords(1,:);
+        coords(1,:) = coords(tempi,:);
+        coords(tempi,:) = tempp;
+        baseline = [1 0];
+        for i=2:n
+            vect = coords(i,1:2) - coords(1,1:2)
+            %coords(i,3) = 
+        end
+        for k=1:size(rest_ps,1)
+            if(size(sorted_ps, 1) == 0)
+                sorted_ps = [rest_ps(k, :)];
+            else
+                if(sorted_ps(k-1, 3) == rest_ps(k, 3))
+                    dist1 = norm(sorted_ps(k-1, 1:2) - p_zero);
+                    dist2 = norm(rest_ps(k, 1:2) - p_zero);
+                    if(dist1 < dist2)
+                        sorted_ps = [sorted_ps; rest_ps(k, :)];
+                    else
+                        temp = sorted_ps(k-1, :);
+                        sorted_ps(k-1, :) = rest_ps(k,:);
+                        sorted_ps = [sorted_ps; temp];
+                    end
+                else
+                    sorted_ps = [sorted_ps; rest_ps(k, :)];
+                end
+            end
+        end
+        
+        
+    end
+    
+    function h = ccw(p1, p2, p3)
+        h = (p2(1) - p1(1))*(p3(2) - p1(2)) - (p2(2) - p1(2))*(p3(1) - p1(1))
     end
