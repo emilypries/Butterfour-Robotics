@@ -13,7 +13,7 @@
 % main function - roomba follows planned path trajectory
 % port is robot object returned by RoombaInit
 function hw4_team_04(port)
-    path = fopen('path.txt');
+    path = fopen('thepath.txt');
     npts = str2double(fgetl(path));
     ppts = [];
     for i = 1:npts
@@ -27,7 +27,7 @@ function hw4_team_04(port)
     x = ppts(1,1);
     y = ppts(1,2);
     r = pi/2;
-    angerr = pi/36;
+    angerr = pi/90;
     poserr = 0.175;
     % states for process
     TURN2POINT = 0;
@@ -57,9 +57,9 @@ function hw4_team_04(port)
             dir2turn = ppts(idx,:)-[x,y];
             ang2turn = atan2(dir2turn(2), dir2turn(1))
             turn_r = ang2turn;
-            if ang2turn < 0
+            if ang2turn-r < 0
                 SetDriveWheelsCreate(port,-0.1,0.1);
-            elseif ang2turn > 0
+            elseif ang2turn-r > 0
                 SetDriveWheelsCreate(port,0.1,-0.1);
             end
             cur_state = HEAD2POINT;
@@ -69,8 +69,8 @@ function hw4_team_04(port)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 pause(0.05);
                 SetDriveWheelsCreate(port,0.2,0.2); % .2 fast .2 furious
+                cur_state = WHEN2STOPP;
             end
-            cur_state = WHEN2STOPP;
         elseif (cur_state == WHEN2STOPP)
             if (x > ppts(idx,1) - poserr && x < ppts(idx, 1) + poserr &&...
                 y > ppts(idx,2) - poserr && y < ppts(idx, 2) + poserr)
