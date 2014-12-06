@@ -13,7 +13,7 @@
 % main function - creates graph representation of environment
 % obj_file - a file containing a descirption of the environment obstacles
 % pts_file - a file containing the start and goal points for path-plannning
-function path_planner(obj_file, pts_file)
+function hw4_path_planner(obj_file, pts_file)
     supermatrix = [];   % holds object vertices in order read from file
     supernums   = [];   % holds number of vertices per object 
     ROOMBA_DIAM = 0.35; % diamater of roomba
@@ -316,7 +316,7 @@ function path_planner(obj_file, pts_file)
         if (size(hull_points{i},1) == 0)
             continue;
         end
-        convex_return = [convex_hull2(hull_points{i}(:,1:2))];
+        convex_return = [convex_hull(hull_points{i}(:,1:2))];
         convex_return = [convex_return, ones(size(convex_return,1),1)*objcount];
         objcount = objcount+1;
         real_dijkstra = [real_dijkstra; convex_return];
@@ -447,6 +447,7 @@ function grown = convex_hull(coords)
 
 end    
     
+% different take on convex hull, unused
 function grown = convex_hull2(coords)
         n = size(coords, 1);
         tempmin = inf;
@@ -523,30 +524,28 @@ function grown = convex_hull2(coords)
         
         grown = [sorted_coords(1,1:2);sorted_coords(size(sorted_coords,1),1:2)];
         n = 2;
-    while n < size(sorted_coords,1)
-        le_size = size(grown)
-        v1 = grown(1,:)-grown(2,:);
-        disp('v1 is')
-        v1 = [v1 0]
-        pt = sorted_coords(n,1:2)-grown(1,:) % should this be grown(1,:) or 2
-        disp('v2 is')
-        pt = [pt 0]
+        while n < size(sorted_coords,1)
+            le_size = size(grown)
+            v1 = grown(1,:)-grown(2,:);
+            disp('v1 is')
+            v1 = [v1 0]
+            pt = sorted_coords(n,1:2)-grown(1,:) % should this be grown(1,:) or 2
+            disp('v2 is')
+            pt = [pt 0]
             
-        z = cross(v1, pt)
-        z(3)
+            z = cross(v1, pt)
+            z(3)
 
-        if z(3) > 0
-            grown = [sorted_coords(n, 1:2); grown]
-            n = n + 1;
-        else
-            disp('Popped from stack')
-            %n = n + 1;
-            grown(1,:)
-            grown = grown(2:size(grown,1),:)
+            if z(3) > 0
+                grown = [sorted_coords(n, 1:2); grown]
+                n = n + 1;
+            else
+                disp('Popped from stack')
+                %n = n + 1;
+                grown(1,:)
+                grown = grown(2:size(grown,1),:)
+            end
         end
-
-
-    end
         
         
     end
@@ -554,5 +553,214 @@ function grown = convex_hull2(coords)
     function h = ccw(p1, p2, p3)
         h = (p2(1) - p1(1))*(p3(2) - p1(2)) - (p2(2) - p1(2))*(p3(1) - p1(1))
     end
+
+    function [path, currdist, dist_array] = dijkstra(pa, num_obj_points)
+% need array of points including vertices of walls
+%how many points are obj points and how many are walls  
+
+   % pa = [0,0;6,6;1,1;1,0;0,1;2,2;3,3;4,4;5,5];
+    %[palength, pawidth] = size(pa);
+    palength = num_obj_points;
+    dist_array = calc_all_dists(pa, num_obj_points);
+    
+    % Dijkstra's Algorithm
+    % Initialize Variables:
+    visited = zeros(1,palength);
+    distances = inf(1,palength);
+    bestway = zeros(1,palength);
+    currdist = 0;
+    
+    % Set up Cycle 1
+    distances(1) = 0;
+    current = 1;
+    path = [1];
+    
+    while true
+        % Mark current vertex as visited
+        visited(current) = 1;
+        
+        % Update best distances so far
+        for i = 1:palength
+            if (visited(i)==0 && distances(i)> (currdist + dist_array(i,current)))
+                distances(i) = currdist + dist_array(i,current);
+                bestway(i) = current;
+            end
+        end
+        
+        % If we have reached the path or if we have just visited the goal,
+        % break
+        if(all(visited  == visited(1)))
+            disp('visited all nodes')
+            break;
+        end
+        
+        % Pick the next vertex with the minimum distance
+        tmin = inf;
+        tcurr = 0;
+        for i = 1:palength
+            if visited(i)==1
+                continue
+            end
+            if (distances(i)<tmin && distances(i)~=0 && distances(i) ~= inf)
+                tmin = distances(i);
+                tcurr = i;
+            end
+        end
+        if tcurr == 0
+            disp('did not find a min')
+            break;
+        end
+        
+        % If we got to the goal, break
+        if (tcurr == 2)
+            disp('found goal')
+            break;
+        end
+        
+        if (dist_array(current,2) < inf)
+            currdist = currdist + dist_array(current,2);
+            path = [path, 2];
+            visited(2)=1;
+            disp('reached the goal')
+            break;
+        end
+        
+        %Update conditions for next loop
+        current = tcurr;
+        currdist = currdist + tmin;
+        path = [path, current];
+    end
+    path = [];
+    if (visited(2)==1)
+        %visited2 = zeros(1,palength);
+        path = [];
+        currfrom = 2;
+        while currfrom ~= 1
+            %visited2(currfrom) = 1;
+            path = [currfrom, path]
+            currfrom = bestway(currfrom)
+        end
+        path = [1, path];
+    end
+    path = [pa(path,1), pa(path,2)];
+end
+
+function dist_array2 = calc_all_dists(point_array, num_obj_points)
+    % dist_array creates a matrix with the distances between all vertices.
+    % If a vertex is unreachable from another or is connecting to itself,
+    % the edge distance is Inf
+    
+    % Initialize arrays
+    %[palength, pawidth] = size(point_array);
+    palength = num_obj_points;
+    dist_array = [];
+    dist_row = [];
+    
+    % Build the raw array (calculate distances for all edges regardless of
+    % crossing)
+    for i = 1:palength
+        for j = 1:palength
+            % If a vertex is connect to itself, the distance is infinite
+            if i == j
+                dist_row = [dist_row, inf];
+            % Otherwise, calculate the distance
+            else
+            dist_row = [dist_row, get_dist(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2))];
+            end
+        end
+        dist_array = [dist_array; dist_row];
+        dist_row = [];
+    end
+    
+   % disp(dist_array)
+   
+   dist_array2 = dist_array;
+   crosslist = [];
+   
+   % Find internal edges within obstacles MOVE UP TO FIRST ROUND
+   for i = 1:palength
+       for j = i+1:palength
+           if (point_array(i,3) == point_array(j,3) && (j-i ~= 1 && j-i ~= (j-point_array(j,3))))
+               dist_array2(j,i) = inf;
+               dist_array2(i,j) = inf;
+               crosslist = [crosslist; i,j];
+           end
+       end
+   end
+   total_num = size(point_array,1);
+   i = num_obj_points+1;
+   disp('pre-wall')
+   while i <= total_num
+       j = i + 1;
+       if j > total_num
+           j = num_obj_points+1;
+       end
+       crosslist = [crosslist; i,j];
+       i = i+1;
+       
+   end
+   %more invalid edges:
+   
+    [crosslength, crosswidth] = size(crosslist);
+    % Check which edges cross internals
+    disp ('started checking cross')
+    disp size
+    disp(palength)
+    perr = .4;
+    for i = 1:palength
+        for j = i:palength
+            
+            if ((point_array(i,1) > 1.5367-perr && point_array(i,1) < 1.5367+perr)  && (point_array(i,2) > -2.5860 - perr && point_array(i,2) < -2.5860 + perr ))
+                dist_array2(i,:) = inf;
+                dist_array2(:,i) = inf;
+            end
+            if ((point_array(j,1) > 1.5367-perr && point_array(j,1) < 1.5367+perr)  && (point_array(j,2) > -2.5860 - perr && point_array(j,2) < -2.5860 + perr ))
+                dist_array2(j,:) = inf;
+                dist_array2(:,j) = inf;
+            end
+            for k = 1:crosslength        
+                    if check_cross(point_array(i,1), point_array(i,2), point_array(j,1), point_array(j,2), point_array(crosslist(k,1),1), point_array(crosslist(k,1),2), point_array(crosslist(k,2),1), point_array(crosslist(k,2),2))
+                        dist_array2(i,j) = inf;
+                        dist_array2(j,i) = inf;
+                    end
+            end
+        end
+    end    
+end
+    
+function dist = get_dist(x1, y1, x2, y2)
+    % get_dist calculates the distance between two points
+    dist = sqrt(((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1)));
+end
+
+function isit = check_cross(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy)
+    % check_cross returns true if two line segments cross by calculating
+    % the dot product and crossing point (if one exists), then checking to
+    % see if the crossing point is on the line segments
+    a = [Ax, Ay];
+    c = [Cx, Cy];
+    e = [Bx - Ax, By - Ay];
+    f = [Dx - Cx, Dy - Cy]; 
+    p = [-e(2), e(1)];
+    if (dot(f,p) == 0)
+        isit = false;
+        return;
+    end
+    h = ( dot((a - c),p) )/( dot(f,p) );
+    if (h < 0 || h > 1)
+        isit = false;
+        return;
+    end
+    cross = c+f*h;
+    crx = cross(1);
+    cry = cross(2);       
+    %if (((((crx<=Ax) && (crx>=Bx)) || ((crx<=Bx) && (crx >= Ax))) && (((crx<=Cx) && (crx>=Dx)) || ((crx<=Dx) && (crx>=Cx)))) && ((((cry<=Ay) && (cry>=By)) || ((cry<=By) && (cry >= Ay))) && (((cry<=Cy) && (cry>=Dy)) || ((cry<=Dy) && (cry>=Cy)))))
+    if (((((crx<Ax) && (crx>Bx)) || ((crx<Bx) && (crx > Ax))) && (((crx<Cx) && (crx>Dx)) || ((crx<Dx) && (crx>Cx)))) && ((((cry<Ay) && (cry>By)) || ((cry<By) && (cry > Ay))) && (((cry<Cy) && (cry>Dy)) || ((cry<Dy) && (cry>Cy)))))
+        isit = true;
+    else
+        isit = false;
+    end
+end
+
 
     
