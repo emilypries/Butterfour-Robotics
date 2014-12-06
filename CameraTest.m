@@ -5,12 +5,20 @@ function CameraTest()
     str_ip = 'http://192.168.0.102/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     img = imread(str_ip);
     fh = figure;, imshow(img);
-    [x, y] = ginput(1); 
+    h = imrect;
+    rect = round(h.getPosition);
     delete(fh);
+    
+    %Extract values from rect
+    width = rect(3);
+    height = rect(4);
+    x = rect(1) + round(width/2);
+    y = rect(2) + round(height/2);
 
     %Gets target color, CURRENTLY RGB 
     img_hsv = rgb2hsv(img);
-    trgt = img_hsv(floor(y), floor(x), :)
+    trgt_window = img_hsv(rect(2):rect(2)+height, rect(1):rect(1)+weight, 1);
+    trgt = mean(mean(target_window));
     range = 0.02;
     
     %Endless loop to test camera, quit with ctrl c :)
