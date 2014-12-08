@@ -18,14 +18,15 @@ function hw5_team_04_2(port)
     ypos = 0;
     ang = 0;
     
+    rev = .15;
+    
     % States
     SPIN = 0; % spin, find pair of vertical changes 
     SEARCH = 1; % spin failed, move a bit towards blue and then spin again
     CONFIRM = 2; % inspect between the vertical lines for blue to make sure its a door
     BUMPED = 3; % hit something while searching
-    DOOR_FOUND = 4; 
-    DRIVE2DOOR = 5;
-    KNOCKKNOCK = 6; % then drive in
+    DRIVE2DOOR = 4;
+    KNOCKKNOCK = 5; % then drive in
     
     cur_state = SPIN;
     
@@ -38,15 +39,54 @@ function hw5_team_04_2(port)
         [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
         img = imread(str_ip);
         
+        [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
+                         BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
+        if (BumpRight || BumpLeft || BumpFront)
+            cur_state = BUMPED;
+        end
+        
         if cur_state == SEARCH
+            rev = -1*rev;
+            SetDriveWheelsCreate(port,0.35+rev,0.35-rev);
+            pause(.2);
+            SetDriveWheelsCreate(port,0,0);
+            [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+            [chance, door_x, door_y] = check_door(img);
+            if chance > 0
+                cur_state = DRIVE2DOOR;
+            end
             
         elseif cur_state == SPIN
+            % spin in 60 degree intervals and check camera to find a door
+            % if no door is found, go back to search
+            for i = 1:6
+                turnAngle(port, .2, 60);
+                [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+                img = imread(str_ip);
+                [chance, door_x, door_y] = check_door(img);
+                if chance > 0 % can change this to account for threshold
+                    cur_state = DRIVE2DOOR;
+                    break;
+                else (chance == 0 && i == 6)
+                    cur_state = SEARCH;
+                end
+            end
             
         elseif cur_state == BUMPED
+            % if we bump, back up, then turn accordingly and go back to
+            % searching
+            SetDriveWheelsCreate(port,-0.5,-0.5);
+            pause(1.5);
+            SetDriveWheelsCreate(port, 0, 0);
+            [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+            if (BumpLeft || BumpFront)
+                turnAngle(port, .2, -90);
+            else
+                turnAngle(port, .2, 90);
+            end
+            [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             
         elseif cur_state == CONFIRM
-            
-        elseif cur_state == DOOR_FOUND
             
         elseif cur_state == DRIVE2DOOR
             
@@ -61,6 +101,7 @@ function hw5_team_04_2(port)
                         SetDriveWheelsCreate(port,-0.5,-0.5);
                         pause(.3);
                         SetDriveWheelsCreate(port, 0, 0);
+                        [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                         BeepRoomba(port);
                         BeepRoomba(port);
                         break;
@@ -79,6 +120,12 @@ function hw5_team_04_2(port)
         
         break; %Remove this once infinite loop is ended        
     end
+end
+
+function [chance, door_x, door_y] = check_door(raw_image)
+    % Check the raw_image to find find doors
+    % If no door is found, set chance to 0
+    
 end
 
 % updates the spatial descriptors
