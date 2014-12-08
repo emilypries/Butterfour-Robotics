@@ -87,7 +87,10 @@ end
 function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)   
         %Reads current image
         img = rgb2hsv(img_rgb);
-        
+        subplot(2, 3, 4);
+        imshow(img_rgb); title('RGB');
+        subplot(2, 3, 6);
+        imshow(img); title('HSV');
         %Sets up and constructs mask
         h_mask_L = img(:, :, 1) > (trgt(1) - hr);
         h_mask_H = img(:, :, 1) < (trgt(1) + hr);
@@ -96,20 +99,26 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
         v_mask_L = img(:, :, 3) > (trgt(3) - vr);
         v_mask_H = img(:, :, 3) < (trgt(3) + vr);
         avg_mask = (h_mask_L == h_mask_H) &...
-                   (s_mask_L == s_mask_H) &...
-                   (v_mask_L == v_mask_H);
-                
+                   (s_mask_L == s_mask_H);% &...
+                   %(v_mask_L == v_mask_H);
+        subplot(2, 3, 1);
+        imshow((h_mask_L == h_mask_H)); title('Hue');
+        subplot(2, 3, 2);
+        imshow((s_mask_L == s_mask_H)); title('Saturation');
+        subplot(2, 3, 3);
+        imshow((v_mask_L == v_mask_H)); title('Value');
+        
     
         %Performs 15 dilations and erosions. Fills in holes in blobs that
         %are meant to connect together
         k = 10;
-        processed_img = bwmorph(avg_mask, 'erode', k);
-        processed_img = bwmorph(processed_img, 'dilate', k);
+        processed_img = bwmorph(avg_mask, 'dilate', k);
+        processed_img = bwmorph(processed_img, 'erode', k);
 
         %Performs 15 erosions and 15 dilations. Removes some random noise in
         %the image
-        processed_img = bwmorph(processed_img, 'dilate', k);
         processed_img = bwmorph(processed_img, 'erode', k);
+        processed_img = bwmorph(processed_img, 'dilate', k);
         
         in_mask = processed_img;
         
@@ -138,7 +147,8 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
         A = sum(sum(mask));
         x = 0;
         y = 0;
-        [m_mask, n_mask] = size(mask);        
+        [m_mask, n_mask] = size(mask);
+        
         for i = 1:m_mask
             for j = 1:n_mask
                 if(mask(i, j))
@@ -147,11 +157,13 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
                 end
             end
         end
+
         %Centroids
         x_cen = floor(x/A);
         y_cen = floor(y/A);
 
-        imshow(mask);
+        subplot(2,3,5);
+        imshow(mask); title('Mask');
         hold on;
         %Draws square over centroid.
         plot([x_cen-10;x_cen+10], [y_cen+10;y_cen+10],...
