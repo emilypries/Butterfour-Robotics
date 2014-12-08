@@ -51,9 +51,33 @@ function hw5_team_04_2(port)
         elseif cur_state == DRIVE2DOOR
             
         else cur_state == KNOCKKNOCK
+            % knock twice
+            for i = 1:2
+                SetDriveWheelsCreate(port,0.5,0.5);
+                while true
+                    [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
+                         BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
+                    if (BumpRight || BumpLeft || BumpFront)
+                        SetDriveWheelsCreate(port,-0.5,-0.5);
+                        pause(.3);
+                        SetDriveWheelsCreate(port, 0, 0);
+                        BeepRoomba(port);
+                        BeepRoomba(port);
+                        break;
+                    end
+                end
+            end
+            % wait 3 seconds for door to open, then drive in
+            pause(3);
+            SetDriveWheelsCreate(port, 0.5, 0.5);
+            pause(2);
+            SetDriveWheelsCreate(port,0,0);
+            break;
         end
         
-        break;
+        pause(.05);
+        
+        break; %Remove this once infinite loop is ended        
     end
 end
 
