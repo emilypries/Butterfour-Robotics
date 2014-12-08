@@ -147,7 +147,6 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
                 end
             end
         end
-
         %Centroids
         x_cen = floor(x/A);
         y_cen = floor(y/A);
