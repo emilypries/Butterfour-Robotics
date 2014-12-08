@@ -23,9 +23,9 @@ function hw5_team_04_2(port)
     % States
     SPIN = 0; % spin, find pair of vertical changes 
     SEARCH = 1; % spin failed, move a bit towards blue and then spin again
-    CONFIRM = 2; % inspect between the vertical lines for blue to make sure its a door
+    DRIVE2DOOR = 2;
     BUMPED = 3; % hit something while searching
-    DRIVE2DOOR = 4;
+    CONFIRM = 4; % inspect between the vertical lines for blue to make sure its a door
     KNOCKKNOCK = 5; % then drive in
     
     cur_state = SPIN;
@@ -86,9 +86,13 @@ function hw5_team_04_2(port)
             end
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             
-        elseif cur_state == CONFIRM
-            
         elseif cur_state == DRIVE2DOOR
+            % drive to the face the suggested door perpendicularly 
+            
+        
+        elseif cur_state == CONFIRM
+            % check for blue over large area expected in front of roomba before
+            % knocking
             
         else cur_state == KNOCKKNOCK
             % knock twice
@@ -127,6 +131,7 @@ function [chance, door_x, door_y] = check_door(raw_image)
     % If no door is found, set chance to 0
     
 end
+
 
 % updates the spatial descriptors
 function [x, y, r] = adjust_dist(port, a, b, rad) 
