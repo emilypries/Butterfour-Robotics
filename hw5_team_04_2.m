@@ -190,14 +190,87 @@ function hw5_team_04_2(port)
     end
 end
 
-function [chance, door_x, door_y] = check_door(raw_image)
-    % Check the raw_image to find find doors
-    % If no door is found, set chance to 0
+%Finds the biggest blob. Takes a binary image as an argument
+function mask =  findBiggest(img)
+    lbl_mask = bwlabel(img);
     
-    mask_x = [-1,0,1;-2,0,2;-1,0,1];
-    vert = conv2(raw_image(:,:,3), mask_x);
+        A = 0;
+        label = 1;
+        mask = in_mask;
+        while true
+            nLabel = lbl_mask == label;
+            if(~any(nLabel(:)))
+                break;
+            end
+            A_curr = sum(sum(nLabel));
+            if(A_curr > A)
+                A = A_curr;
+                mask = nLabel;
+            end
+            label = label + 1;
+        end
+end
+
+%finds the closest door and edges
+function [edges, x_cen] = check_door(img)
+    img_hsv = rgb2hsv(img);
+    
+    maskx = [-1 0 1; -2 0 2; -1 0 1];
+    
+    %Finding the biggest blue blob
+    bh_min = 0.6;
+    bh_max = 0.7;
+    bs_min = 0.2;
+    bs_max = 0.36;
+    
+    bhh = img_hsv(:, :, 1) > bh_min;
+    bhl = img_hsv(:, :, 1) < bh_max;
+    
+    bh = bhh == bhl;
+    
+    bsh = img_hsv(:, :, 2) > bs_min;
+    bsl = img_hsv(:, :, 2) < bs_max;
+    
+    bs = bsh == bsl;
+    
+    b_hs = bh & bs;
+    
+    pi = bwmorph(b_hs, 'erode', 5);
+    pi = bwmorph(pi, 'dilate', 10);
+    
+    biggest = findBiggest(pi);
+    
+    %Get vertical edges
+    dx = imfilter(img(:, :, 3), maskx);
+    vert = im2bw(dx, 0.9);
+    
+    d_edges = biggest & vert;
+    
+    [L, edges] = bwlabel(d_edges);
+    
+    stat = regionprops(L, 'centroid');
+    
+    
+    closest = 0;
+    min_d = inf;
+    for x = 1:numel(stat)
+        if( abs(stat(x).Centroid(1) - size(img, 2)/2) < min_d)
+            closest = x;
+            min_d = abs(stat(x).Centroid(1) - size(img, 2)/2);
+        end
+        
+        if(stat(x).Centroid(1) == 1 || stat(x).Centroid(1) == size(img,2))
+            edges = edges - 1;
+        end
+    end
+    
+    x_cen = stat(closest).Centroid(1);
     
 end
+    
+    
+    
+    
 
 
 % updates the spatial descriptors
