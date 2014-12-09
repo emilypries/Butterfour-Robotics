@@ -18,7 +18,7 @@ function hw5_team_04_2(port)
     ypos = 0;
     ang = 0;
     
-    rev = .15;
+    rev = .1;
     
     % States
     SPIN = 0; % spin, find pair of vertical changes 
@@ -27,7 +27,6 @@ function hw5_team_04_2(port)
     BUMPED = 3; % hit something while searching
     STRAIGHT_DRIVE = 4;
     KNOCKKNOCK = 5; % then drive in
-    
     
     cur_state = SPIN;
     
@@ -54,8 +53,8 @@ function hw5_team_04_2(port)
         
         if cur_state == SEARCH
             rev = -1*rev;
-            SetDriveWheelsCreate(port,0.35+rev,0.35-rev);
-            pause(.2);
+            SetDriveWheelsCreate(port,0.15+rev,0.15-rev);
+            pause(.4);
             SetDriveWheelsCreate(port,0,0);
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             img = imread(str_ip);
@@ -97,9 +96,9 @@ function hw5_team_04_2(port)
         elseif cur_state == DRIVE2DOOR
             [edges, door_x] = check_door(img);
             scale = abs(x-(imgx/2))/(imgx/2);
-            if door_x < .9*(imgx/2) %if the door is on the left
+            if door_x < .95*(imgx/2) %if the door is on the left
                 SetDriveWheelsCreate(port,0.2*scale,-0.2*scale); % drive forward and left
-            elseif door_x > 1.1*(imgx/2)
+            elseif door_x > 1.05*(imgx/2)
                 SetDriveWheelsCreate(port,-0.2*scale,0.2*scale); % drive forward and right
             else
                 SetDriveWheelsCreate(port,0.2,0.2); % drive straight ahead
@@ -164,12 +163,12 @@ function hw5_team_04_2(port)
             while true
                 if (BumpRight || BumpLeft || BumpFront)
                     SetDriveWheelsCreate(port,0,0);
-                    BeepRoomba(port);
-                    BeepRoomba(port);
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                     SetDriveWheelsCreate(port,-.2,-.2);
                     pause(.4);
                     SetDriveWheelsCreate(port, 0, 0);
+                    BeepRoomba(port);
+                    BeepRoomba(port);
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                     %wait for door to open
                     pause(5);
@@ -184,9 +183,7 @@ function hw5_team_04_2(port)
             break;
         end
         
-        pause(.05);
-        
-        break; %Remove this once infinite loop is ended        
+        pause(.05);       
     end
 end
 
