@@ -25,8 +25,7 @@ function hw5_team_04_2(port)
     SEARCH = 1; % spin failed, move a bit towards blue and then spin again
     DRIVE2DOOR = 2;
     BUMPED = 3; % hit something while searching
-    CONFIRM = 4; % inspect between the vertical lines for blue to make sure its a door
-    KNOCKKNOCK = 5; % then drive in
+    KNOCKKNOCK = 4; % then drive in
     
     cur_state = SPIN;
     
@@ -38,6 +37,8 @@ function hw5_team_04_2(port)
         
         [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
         img = imread(str_ip);
+        imgx = size(img, 2);
+        imgy = size(img, 1);
         
         [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
                          BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
@@ -51,8 +52,14 @@ function hw5_team_04_2(port)
             pause(.2);
             SetDriveWheelsCreate(port,0,0);
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+            img = imread(str_ip);
             [chance, door_x, door_y] = check_door(img);
             if chance > 0
+                imgx = size(img, 2);
+                imgy = size(img, 1);
+                v1 = [imgx/2, 0] - [imgx/2, imgy];
+                v2 = [door_x, door_y] - [imgx/2, imgy];
+                turn_ang = acos(dot(v1, v2));
                 cur_state = DRIVE2DOOR;
             end
             
@@ -65,6 +72,11 @@ function hw5_team_04_2(port)
                 img = imread(str_ip);
                 [chance, door_x, door_y] = check_door(img);
                 if chance > 0 % can change this to account for threshold
+                    imgx = size(img, 2);
+                    imgy = size(img, 1);
+                    v1 = [imgx/2, 0] - [imgx/2, imgy];
+                    v2 = [door_x, door_y] - [imgx/2, imgy];
+                    turn_ang = acos(dot(v1, v2));
                     cur_state = DRIVE2DOOR;
                     break;
                 else (chance == 0 && i == 6)
@@ -87,12 +99,29 @@ function hw5_team_04_2(port)
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             
         elseif cur_state == DRIVE2DOOR
-            % drive to the face the suggested door perpendicularly 
-            
-        
-        elseif cur_state == CONFIRM
-            % check for blue over large area expected in front of roomba before
-            % knocking
+            turnAngle(port, turn_ang);
+            [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+            img = imread(str_ip);
+            [chance, door_x, door_y] = check_door(img);
+            if chance == 1
+                cur_state = KNOCKKNOCK;
+            elseif chance == 0
+                cur_state = SEARCH;
+            else
+                imgx = size(img, 2);
+                imgy = size(img, 1);
+                v1 = [imgx/2, 0] - [imgx/2, imgy];
+                v2 = [door_x, door_y] - [imgx/2, imgy];
+                turn_ang = acos(dot(v1, v2));
+            end
+%             if door_x < (imgx/2) %if the door is on the left
+%                 SetDriveWheelsCreate(port,0.2,0.1); % drive forward and left
+%             elseif door_x > (imgx/2)
+%                 SetDriveWheelsCreate(port,0.1,0.2); % drive forward and right
+%             else
+%                 SetDriveWheelsCreate(port,0.2,0.2); % drive straight ahead
+%             end
+%             
             
         else cur_state == KNOCKKNOCK
             % knock twice
