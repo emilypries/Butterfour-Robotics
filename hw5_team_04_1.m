@@ -29,6 +29,7 @@ function hw5_team_04_1(port)
     str_ip = 'http://192.168.0.101/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     img = imread(str_ip);
     axis = size(img,2)/2;
+    turn_left = true;
     fh = figure; imshow(img);
     h = imrect;
     rect = round(h.getPosition);
@@ -58,27 +59,38 @@ function hw5_team_04_1(port)
         scale = abs(x - axis)/axis;
         if cur_state == FIND_OBJ
             display('state: finding object');
-            if x < axis
+            if x < axis*0.95
                 SetDriveWheelsCreate(port,0.05*scale,-0.05*scale);
-            elseif x > axis
+                turn_left = true;
+            elseif x > axis*1.05
                 SetDriveWheelsCreate(port,-0.05*scale,0.05*scale);
+                turn_left = false;
             end
             cur_state = TURN2OBJ;
         elseif cur_state == TURN2OBJ
             display('state: turning to object');
             SetDriveWheelsCreate(port,0.0,0.0);
-            if a < ta - err
-                SetDriveWheelsCreate(port,0.05,0.05);
-                cur_state = MOVE_FWD;
-            elseif a > ta + err
-                SetDriveWheelsCreate(port,-0.05,-0.05);
-                cur_state = MOVE_FWD;
+            if(x > axis*0.95 && x < axis*1.05)
+                if a < ta - err
+                    SetDriveWheelsCreate(port,0.05,0.05);
+                    cur_state = MOVE_FWD;
+                elseif a > ta + err
+                    SetDriveWheelsCreate(port,-0.05,-0.05);
+                    cur_state = MOVE_FWD;
+                else
+                    cur_state = FIND_OBJ;
+                end
             else
-                cur_state = FIND_OBJ;
+                if((turn_left && x > axis*1.05) ||...
+                   (~turn_left && x < axis*0.95))
+                    cur_state = FIND_OBJ;
+                end
             end
         elseif cur_state == MOVE_FWD
             display('state: moving forward');
-            if a > (ta - err) && a < (ta + err)
+            if ~(x > axis*0.95 && x < axis*1.05)
+                cur_state = FIND_OBJ;
+            elseif a > (ta - err) && a < (ta + err)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 cur_state = FIND_OBJ;
             end
