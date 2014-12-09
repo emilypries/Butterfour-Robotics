@@ -12,9 +12,8 @@
 
 % Task #1 - Color Marker Tracking
 % 'port' is robot object returned by RoombaInit()
-
 function hw5_team_04_1(port)
-    err = 10;
+    err = 5000;
     % spatial descriptors of robot
     xpos = 0;
     ypos = 0;
@@ -27,7 +26,7 @@ function hw5_team_04_1(port)
     
     % will get an initial snapshot of the camera and a single
     % input from the user which will decide the target color
-    str_ip = 'http://192.168.0.100/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
+    str_ip = 'http://192.168.0.101/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     img = imread(str_ip);
     axis = size(img,2)/2;
     fh = figure; imshow(img);
@@ -42,8 +41,8 @@ function hw5_team_04_1(port)
     %Gets target color, CURRENTLY RGB 
     img_hsv = rgb2hsv(img);
     trgt_window = img_hsv(rect(2):rect(2)+height,rect(1):rect(1)+width,:);
-    trgt = mean(mean(trgt_window));
-    hr = 0.03;
+    trgt = median(mean(trgt_window));
+    hr = 0.06;
     sr = 0.16;
     vr = 0.07;
     
@@ -53,34 +52,38 @@ function hw5_team_04_1(port)
     
     while true
         img = imread(str_ip);
-        [x,y,a] = hw5_track(img,trgt,hr,sr,vr);
+        [x,y,a] = hw5_track(img,trgt,hr,sr,vr)
+        ta
         [xpos,ypos,ang] = adjust_dist(port,xpos,ypos,ang);
         scale = abs(x - axis)/axis;
         if cur_state == FIND_OBJ
+            display('state: finding object');
             if x < axis
-                SetDriveWheelsCreate(port,0.2*scale,-0.2*scale);
+                SetDriveWheelsCreate(port,0.05*scale,-0.05*scale);
             elseif x > axis
-                SetDriveWheelsCreate(port,-0.2*scale,0.2*scale);
+                SetDriveWheelsCreate(port,-0.05*scale,0.05*scale);
             end
             cur_state = TURN2OBJ;
         elseif cur_state == TURN2OBJ
+            display('state: turning to object');
             SetDriveWheelsCreate(port,0.0,0.0);
-            if a < ta
-                SetDriveWheelsCreate(port,0.1,0.1);
+            if a < ta - err
+                SetDriveWheelsCreate(port,0.05,0.05);
                 cur_state = MOVE_FWD;
-            elseif a > ta
-                SetDriveWheelsCreate(port,-0.1,-0.1);
+            elseif a > ta + err
+                SetDriveWheelsCreate(port,-0.05,-0.05);
                 cur_state = MOVE_FWD;
             else
                 cur_state = FIND_OBJ;
             end
         elseif cur_state == MOVE_FWD
+            display('state: moving forward');
             if a > (ta - err) && a < (ta + err)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 cur_state = FIND_OBJ;
             end
         end
-        pause(0.05);    
+        pause(0.03);    
     end
 end
 
@@ -99,14 +102,14 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
         v_mask_L = img(:, :, 3) > (trgt(3) - vr);
         v_mask_H = img(:, :, 3) < (trgt(3) + vr);
         avg_mask = (h_mask_L == h_mask_H) &...
-                   (s_mask_L == s_mask_H);% &...
+                   (s_mask_L & s_mask_H);% &...
                    %(v_mask_L == v_mask_H);
         subplot(2, 3, 1);
         imshow((h_mask_L == h_mask_H)); title('Hue');
         subplot(2, 3, 2);
-        imshow((s_mask_L == s_mask_H)); title('Saturation');
+        imshow((s_mask_L & s_mask_H)); title('Saturation');
         subplot(2, 3, 3);
-        imshow((v_mask_L == v_mask_H)); title('Value');
+        imshow((v_mask_L & v_mask_H)); title('Value');
         
     
         %Performs 15 dilations and erosions. Fills in holes in blobs that
