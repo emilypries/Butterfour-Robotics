@@ -10,7 +10,15 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%     \/         
+%    <'l        
+%     ll         
+%     llama~
+%     || ||
+%     '' ''
+
 % Task #2 - Find, Knock, & Enter CEPSR 6 Door
+% 'port' is robot object returned by RoombaInit()
 function hw5_team_04_2(port)
     % Variables
     % Robot spatial descriptors
@@ -42,7 +50,7 @@ function hw5_team_04_2(port)
         imgy = size(img, 1);
         
         [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
-                         BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
+                         BumpFront] = BumpsWheelDropsSensorsRoomba(port);
         if (BumpRight || BumpLeft || BumpFront)
             if cur_state == STRAIGHT_DRIVE
                 cur_state = KNOCKKNOCK;
@@ -66,9 +74,8 @@ function hw5_team_04_2(port)
         elseif cur_state == SPIN
             % spin in 60 degree intervals and check camera to find a door
             % if no door is found, go back to search
-            for i = 1:6
-                turnAngle(port, .2, 60);
-                [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+            for i = 1:6  
+                %[xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                 img = imread(str_ip);
                 [edges, door_x] = check_door(img);
                 if edges > 0 % can change this to account for threshold
@@ -77,6 +84,7 @@ function hw5_team_04_2(port)
                 else (edges == 0 && i == 6)
                     cur_state = SEARCH;
                 end
+                turnAngle(port, .2, 60);
             end
             
         elseif cur_state == BUMPED
@@ -95,7 +103,7 @@ function hw5_team_04_2(port)
             
         elseif cur_state == DRIVE2DOOR
             [edges, door_x] = check_door(img);
-            scale = abs(x-(imgx/2))/(imgx/2);
+            scale = abs(door_x-(imgx/2))/(imgx/2);
             if door_x < .95*(imgx/2) %if the door is on the left
                 SetDriveWheelsCreate(port,0.2*scale,-0.2*scale); % drive forward and left
             elseif door_x > 1.05*(imgx/2)
@@ -108,7 +116,7 @@ function hw5_team_04_2(port)
         elseif cur_state == STRAIGHT_DRIVE
             while true
                 [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
-                     BumpFront] = BumpsWheelDropsSensorsRoomba(serPort);
+                     BumpFront] = BumpsWheelDropsSensorsRoomba(port);
                 if (BumpRight)
                     SetDriveWheelsCreate(port,-0.5,-0.5);
                     pause(.3);
@@ -189,23 +197,22 @@ end
 
 %Finds the biggest blob. Takes a binary image as an argument
 function mask =  findBiggest(img)
-    lbl_mask = bwlabel(img);
-    
-        A = 0;
-        label = 1;
-        mask = in_mask;
-        while true
-            nLabel = lbl_mask == label;
-            if(~any(nLabel(:)))
-                break;
-            end
-            A_curr = sum(sum(nLabel));
-            if(A_curr > A)
-                A = A_curr;
-                mask = nLabel;
-            end
-            label = label + 1;
+    [lbl_mask,n] = bwlabel(img);
+    %imshow(lbl_mask);
+    A = 0;
+    mask = [];
+    for label = 1:n
+        nLabel = lbl_mask == label;
+        if(~any(nLabel(:)))
+            continue;
         end
+        A_curr = sum(sum(nLabel));
+        if(A_curr > A)
+            A = A_curr;
+            mask = nLabel;
+        end
+    end
+        
 end
 
 %finds the closest door and edges
@@ -234,19 +241,24 @@ function [edges, x_cen] = check_door(img)
     
     pi = bwmorph(b_hs, 'erode', 5);
     pi = bwmorph(pi, 'dilate', 10);
-    
+
     biggest = findBiggest(pi);
-    
+    if size(biggest,1) == 0
+        edges = 0;
+        x_cen = 0;
+        return;
+    end
+
     %Get vertical edges
     dx = imfilter(img(:, :, 3), maskx);
     vert = im2bw(dx, 0.9);
     
     d_edges = biggest & vert;
+    imshow(d_edges);
     
     [L, edges] = bwlabel(d_edges);
     
     stat = regionprops(L, 'centroid');
-    
     
     closest = 0;
     min_d = inf;
@@ -264,11 +276,6 @@ function [edges, x_cen] = check_door(img)
     x_cen = stat(closest).Centroid(1);
     
 end
-    
-    
-    
-    
-
 
 % updates the spatial descriptors
 function [x, y, r] = adjust_dist(port, a, b, rad) 

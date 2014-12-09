@@ -10,6 +10,13 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%     \/         
+%    <'l        
+%     ll         
+%     llama~
+%     || ||
+%     '' ''
+
 % Task #1 - Color Marker Tracking
 % 'port' is robot object returned by RoombaInit()
 function hw5_team_04_1(port)
@@ -26,7 +33,7 @@ function hw5_team_04_1(port)
     
     % will get an initial snapshot of the camera and a single
     % input from the user which will decide the target color
-    str_ip = 'http://192.168.0.101/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
+    str_ip = 'http://192.168.0.100/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     img = imread(str_ip);
     axis = size(img,2)/2;
     turn_left = true;
@@ -42,7 +49,7 @@ function hw5_team_04_1(port)
     %Gets target color, CURRENTLY RGB 
     img_hsv = rgb2hsv(img);
     trgt_window = img_hsv(rect(2):rect(2)+height,rect(1):rect(1)+width,:);
-    trgt = median(mean(trgt_window));
+    trgt = mean(mean(trgt_window))
     hr = 0.06;
     sr = 0.16;
     vr = 0.07;
@@ -69,8 +76,8 @@ function hw5_team_04_1(port)
             cur_state = TURN2OBJ;
         elseif cur_state == TURN2OBJ
             display('state: turning to object');
-            SetDriveWheelsCreate(port,0.0,0.0);
-            if(x > axis*0.95 && x < axis*1.05)
+            %if(x > axis*0.95 && x < axis*1.05)
+                SetDriveWheelsCreate(port,0.0,0.0);
                 if a < ta - err
                     SetDriveWheelsCreate(port,0.05,0.05);
                     cur_state = MOVE_FWD;
@@ -80,17 +87,17 @@ function hw5_team_04_1(port)
                 else
                     cur_state = FIND_OBJ;
                 end
-            else
-                if((turn_left && x > axis*1.05) ||...
-                   (~turn_left && x < axis*0.95))
-                    cur_state = FIND_OBJ;
-                end
-            end
+            %else
+                %if((turn_left && x > axis*1.05) ||...
+                 %  (~turn_left && x < axis*0.95))
+                 %   cur_state = FIND_OBJ;
+                %end
+            %end
         elseif cur_state == MOVE_FWD
             display('state: moving forward');
-            if ~(x > axis*0.95 && x < axis*1.05)
-                cur_state = FIND_OBJ;
-            elseif a > (ta - err) && a < (ta + err)
+            %if ~(x > axis*0.95 && x < axis*1.05)
+             %   cur_state = FIND_OBJ;
+            if a > (ta - err) && a < (ta + err)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 cur_state = FIND_OBJ;
             end
@@ -116,12 +123,12 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
         avg_mask = (h_mask_L == h_mask_H) &...
                    (s_mask_L & s_mask_H);% &...
                    %(v_mask_L == v_mask_H);
-        subplot(2, 3, 1);
-        imshow((h_mask_L == h_mask_H)); title('Hue');
-        subplot(2, 3, 2);
-        imshow((s_mask_L & s_mask_H)); title('Saturation');
-        subplot(2, 3, 3);
-        imshow((v_mask_L & v_mask_H)); title('Value');
+        %subplot(2, 3, 1);
+        %imshow((h_mask_L == h_mask_H)); title('Hue');
+        %subplot(2, 3, 2);
+        %imshow((s_mask_L & s_mask_H)); title('Saturation');
+        %subplot(2, 3, 3);
+        %imshow((v_mask_L & v_mask_H)); title('Value');
         
     
         %Performs 15 dilations and erosions. Fills in holes in blobs that
@@ -177,20 +184,20 @@ function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)
         x_cen = floor(x/A);
         y_cen = floor(y/A);
 
-        subplot(2,3,5);
-        imshow(mask); title('Mask');
-        hold on;
+        %subplot(2,3,5);
+        %imshow(mask); title('Mask');
+        %hold on;
         %Draws square over centroid.
-        plot([x_cen-10;x_cen+10], [y_cen+10;y_cen+10],...
-            'r-', 'MarkerFaceColor', [1 0 0]);
-        plot([x_cen-10;x_cen+10], [y_cen-10;y_cen-10],...
-            'r-', 'MarkerFaceColor', [1 0 0]);
-        plot([x_cen+10;x_cen+10], [y_cen-10;y_cen+10],...
-            'r-', 'MarkerFaceColor', [1 0 0]);
-        plot([x_cen-10;x_cen-10], [y_cen-10;y_cen+10],...
-            'r-', 'MarkerFaceColor', [1 0 0]);
-        pause(0.05);
-        hold off;
+        %plot([x_cen-10;x_cen+10], [y_cen+10;y_cen+10],...
+        %    'r-', 'MarkerFaceColor', [1 0 0]);
+        %plot([x_cen-10;x_cen+10], [y_cen-10;y_cen-10],...
+        %    'r-', 'MarkerFaceColor', [1 0 0]);
+        %plot([x_cen+10;x_cen+10], [y_cen-10;y_cen+10],...
+        %    'r-', 'MarkerFaceColor', [1 0 0]);
+        %plot([x_cen-10;x_cen-10], [y_cen-10;y_cen+10],...
+        %    'r-', 'MarkerFaceColor', [1 0 0]);
+        %pause(0.05);
+        %hold off;
 end
 
 % updates the spatial descriptors
