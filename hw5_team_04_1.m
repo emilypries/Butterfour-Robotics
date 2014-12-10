@@ -33,7 +33,7 @@ function hw5_team_04_1(port)
     
     % will get an initial snapshot of the camera and a single
     % input from the user which will decide the target color
-    str_ip = 'http://192.168.0.100/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
+    str_ip = 'http://192.168.0.101/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     img = imread(str_ip);
     axis = size(img,2)/2;
     turn_left = true;
@@ -54,7 +54,7 @@ function hw5_team_04_1(port)
     sr = 0.16;
     vr = 0.07;
     
-    fh = figure;
+    %fh = figure;
     
     [xc, yc, ta] = hw5_track(img,trgt,hr,sr,vr);
     
@@ -76,7 +76,7 @@ function hw5_team_04_1(port)
             cur_state = TURN2OBJ;
         elseif cur_state == TURN2OBJ
             display('state: turning to object');
-            %if(x > axis*0.95 && x < axis*1.05)
+            if(x > axis*0.95 && x < axis*1.05)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 if a < ta - err
                     SetDriveWheelsCreate(port,0.05,0.05);
@@ -87,17 +87,17 @@ function hw5_team_04_1(port)
                 else
                     cur_state = FIND_OBJ;
                 end
-            %else
-                %if((turn_left && x > axis*1.05) ||...
-                 %  (~turn_left && x < axis*0.95))
-                 %   cur_state = FIND_OBJ;
-                %end
-            %end
+            else
+                if((turn_left && x > axis*1.05) ||...
+                   (~turn_left && x < axis*0.95))
+                    cur_state = FIND_OBJ;
+                end
+            end
         elseif cur_state == MOVE_FWD
             display('state: moving forward');
-            %if ~(x > axis*0.95 && x < axis*1.05)
-             %   cur_state = FIND_OBJ;
-            if a > (ta - err) && a < (ta + err)
+            if ~(x > axis*0.95 && x < axis*1.05)
+                cur_state = FIND_OBJ;
+            elseif a > (ta - err) && a < (ta + err)
                 SetDriveWheelsCreate(port,0.0,0.0);
                 cur_state = FIND_OBJ;
             end
@@ -109,10 +109,10 @@ end
 function [x_cen,y_cen,A] = hw5_track(img_rgb,trgt,hr,sr,vr)   
         %Reads current image
         img = rgb2hsv(img_rgb);
-        subplot(2, 3, 4);
-        imshow(img_rgb); title('RGB');
-        subplot(2, 3, 6);
-        imshow(img); title('HSV');
+        %subplot(2, 3, 4);
+        %imshow(img_rgb); title('RGB');
+        %subplot(2, 3, 6);
+        %imshow(img); title('HSV');
         %Sets up and constructs mask
         h_mask_L = img(:, :, 1) > (trgt(1) - hr);
         h_mask_H = img(:, :, 1) < (trgt(1) + hr);
