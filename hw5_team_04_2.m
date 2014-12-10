@@ -26,7 +26,7 @@ function hw5_team_04_2(port)
     ypos = 0;
     ang = 0;
     
-    rev = .1;
+    rev = .01;
     
     % States
     SPIN = 0; % spin, find pair of vertical changes 
@@ -60,8 +60,9 @@ function hw5_team_04_2(port)
         end
         
         if cur_state == SEARCH
+            display('state: searching');
             rev = -1*rev;
-            SetDriveWheelsCreate(port,0.15+rev,0.15-rev);
+            SetDriveWheelsCreate(port,0.04+rev,0.04-rev);
             pause(.4);
             SetDriveWheelsCreate(port,0,0);
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
@@ -72,6 +73,7 @@ function hw5_team_04_2(port)
             end
             
         elseif cur_state == SPIN
+            display('state: spinning');
             % spin in 60 degree intervals and check camera to find a door
             % if no door is found, go back to search
             for i = 1:6  
@@ -84,41 +86,44 @@ function hw5_team_04_2(port)
                 else (edges == 0 && i == 6)
                     cur_state = SEARCH;
                 end
-                turnAngle(port, .2, 60);
+                turnAngle(port, .04, 60);
             end
             
         elseif cur_state == BUMPED
+            display('state: bumped');
             % if we bump, back up, then turn accordingly and go back to
             % searching
-            SetDriveWheelsCreate(port,-0.5,-0.5);
+            SetDriveWheelsCreate(port,-0.05,-0.05);
             pause(1.5);
             SetDriveWheelsCreate(port, 0, 0);
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             if (BumpLeft || BumpFront)
-                turnAngle(port, .2, -90);
+                turnAngle(port, .03, -90);
             else
-                turnAngle(port, .2, 90);
+                turnAngle(port, .03, 90);
             end
             [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             
         elseif cur_state == DRIVE2DOOR
+            display('state: driving to door');
             [edges, door_x] = check_door(img);
             scale = abs(door_x-(imgx/2))/(imgx/2);
             if door_x < .95*(imgx/2) %if the door is on the left
-                SetDriveWheelsCreate(port,0.2*scale,-0.2*scale); % drive forward and left
+                SetDriveWheelsCreate(port,0.02*scale,-0.02*scale); % drive forward and left
             elseif door_x > 1.05*(imgx/2)
-                SetDriveWheelsCreate(port,-0.2*scale,0.2*scale); % drive forward and right
+                SetDriveWheelsCreate(port,-0.02*scale,0.02*scale); % drive forward and right
             else
-                SetDriveWheelsCreate(port,0.2,0.2); % drive straight ahead
+                SetDriveWheelsCreate(port,0.05,0.05); % drive straight ahead
                 cur_state == STRAIGHT_DRIVE;
             end
             
         elseif cur_state == STRAIGHT_DRIVE
+            display('state: driving straight');
             while true
                 [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
                      BumpFront] = BumpsWheelDropsSensorsRoomba(port);
                 if (BumpRight)
-                    SetDriveWheelsCreate(port,-0.5,-0.5);
+                    SetDriveWheelsCreate(port,-0.05,-0.05);
                     pause(.3);
                     SetDriveWheelsCreate(port, 0, 0);
                     BeepRoomba(port);
@@ -128,7 +133,7 @@ function hw5_team_04_2(port)
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                     break;
                 elseif (BumpLeft)
-                    SetDriveWheelsCreate(port,-0.5,-0.5);
+                    SetDriveWheelsCreate(port,-0.05,-0.05);
                     pause(.3);
                     SetDriveWheelsCreate(port, 0, 0);
                     BeepRoomba(port);
@@ -138,7 +143,7 @@ function hw5_team_04_2(port)
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                     break;
                 elseif (BumpFront)
-                    SetDriveWheelsCreate(port,-0.5,-0.5);
+                    SetDriveWheelsCreate(port,-0.05,-0.05);
                     pause(.3);
                     SetDriveWheelsCreate(port, 0, 0);
                     BeepRoomba(port);
@@ -167,12 +172,13 @@ function hw5_team_04_2(port)
 %             end            
             
         else cur_state == KNOCKKNOCK
-            SetDriveWheelsCreate(port,.5,.5);
+            display('state: knocking');
+            SetDriveWheelsCreate(port,.05,.05);
             while true
                 if (BumpRight || BumpLeft || BumpFront)
                     SetDriveWheelsCreate(port,0,0);
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    SetDriveWheelsCreate(port,-.2,-.2);
+                    SetDriveWheelsCreate(port,-.05,-.05);
                     pause(.4);
                     SetDriveWheelsCreate(port, 0, 0);
                     BeepRoomba(port);
@@ -181,7 +187,7 @@ function hw5_team_04_2(port)
                     %wait for door to open
                     pause(5);
                     %drive in and stop
-                    SetDriveWheelsCreate(port, 0.2, 0.2);
+                    SetDriveWheelsCreate(port, 0.05, .05);
                     pause(3);
                     SetDriveWheelsCreate(port,0,0);
                     [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
@@ -222,10 +228,10 @@ function [edges, x_cen] = check_door(img)
     maskx = [-1 0 1; -2 0 2; -1 0 1];
     
     %Finding the biggest blue blob
-    bh_min = 0.6;
-    bh_max = 0.7;
-    bs_min = 0.2;
-    bs_max = 0.36;
+    bh_min = 0.5;
+    bh_max = 0.65;
+    bs_min = 0.09;
+    bs_max = 0.2;
     
     bhh = img_hsv(:, :, 1) > bh_min;
     bhl = img_hsv(:, :, 1) < bh_max;
@@ -242,27 +248,38 @@ function [edges, x_cen] = check_door(img)
     pi = bwmorph(b_hs, 'erode', 5);
     pi = bwmorph(pi, 'dilate', 10);
 
+    %fig = figure;
+    %hold on;
+    %imshow(pi);
     biggest = findBiggest(pi);
+    
     if size(biggest,1) == 0
         edges = 0;
         x_cen = 0;
         return;
     end
-
+    %imshow(biggest);
     %Get vertical edges
     dx = imfilter(img(:, :, 3), maskx);
-    vert = im2bw(dx, 0.9);
+    vert = im2bw(dx, 0.75);
+    vert = bwmorph(vert, 'dilate', 3);
+    %imshow(vert);
     
     d_edges = biggest & vert;
-    imshow(d_edges);
-    
+    %imshow(d_edges);
+    %hold off;
     [L, edges] = bwlabel(d_edges);
     
     stat = regionprops(L, 'centroid');
     
     closest = 0;
     min_d = inf;
-    for x = 1:numel(stat)
+    if size(stat,1) == 0
+        edges = 0;
+        x_cen = 0;
+        return;
+    end
+    for x = 1:size(stat,1)
         if( abs(stat(x).Centroid(1) - size(img, 2)/2) < min_d)
             closest = x;
             min_d = abs(stat(x).Centroid(1) - size(img, 2)/2);
