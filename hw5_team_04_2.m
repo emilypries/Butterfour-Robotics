@@ -39,8 +39,7 @@ function hw5_team_04_2(port)
     cur_state = SPIN;
     
     % Image
-    str_ip = 'http://192.168.0.100/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
-    img = imread(str_ip);
+    str_ip = 'http://192.168.0.101/snapshot.cgi?user=admin&pwd=&resolution=16&rate=0';
     
     while true
         
@@ -76,17 +75,20 @@ function hw5_team_04_2(port)
             display('state: spinning');
             % spin in 60 degree intervals and check camera to find a door
             % if no door is found, go back to search
-            for i = 1:6  
+            for i = 1:12  
                 %[xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
                 img = imread(str_ip);
                 [edges, door_x] = check_door(img);
                 if edges > 0 % can change this to account for threshold
+                    SetDriveWheelsCreate(port, 0, 0);
                     cur_state = DRIVE2DOOR;
                     break;
-                else (edges == 0 && i == 6)
+                elseif (edges == 0 && i == 12)
+                    SetDriveWheelsCreate(port, 0, 0);
                     cur_state = SEARCH;
                 end
-                turnAngle(port, .04, 60);
+                turnAngle(port, .04, 30);
+                pause(1);
             end
             
         elseif cur_state == BUMPED
@@ -107,14 +109,14 @@ function hw5_team_04_2(port)
         elseif cur_state == DRIVE2DOOR
             display('state: driving to door');
             [edges, door_x] = check_door(img);
-            scale = abs(door_x-(imgx/2))/(imgx/2);
+            scale = abs(door_x-(imgx/2))/(imgx);
             if door_x < .95*(imgx/2) %if the door is on the left
                 SetDriveWheelsCreate(port,0.02*scale,-0.02*scale); % drive forward and left
             elseif door_x > 1.05*(imgx/2)
                 SetDriveWheelsCreate(port,-0.02*scale,0.02*scale); % drive forward and right
             else
                 SetDriveWheelsCreate(port,0.05,0.05); % drive straight ahead
-                cur_state == STRAIGHT_DRIVE;
+                cur_state = STRAIGHT_DRIVE;
             end
             
         elseif cur_state == STRAIGHT_DRIVE
@@ -122,34 +124,52 @@ function hw5_team_04_2(port)
             while true
                 [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
                      BumpFront] = BumpsWheelDropsSensorsRoomba(port);
-                if (BumpRight)
-                    SetDriveWheelsCreate(port,-0.05,-0.05);
-                    pause(.3);
-                    SetDriveWheelsCreate(port, 0, 0);
-                    BeepRoomba(port);
-                    BeepRoomba(port);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    turnAngle(port, -45);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    break;
-                elseif (BumpLeft)
-                    SetDriveWheelsCreate(port,-0.05,-0.05);
-                    pause(.3);
-                    SetDriveWheelsCreate(port, 0, 0);
-                    BeepRoomba(port);
-                    BeepRoomba(port);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    turnAngle(port, 45);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    break;
-                elseif (BumpFront)
-                    SetDriveWheelsCreate(port,-0.05,-0.05);
-                    pause(.3);
-                    SetDriveWheelsCreate(port, 0, 0);
-                    BeepRoomba(port);
-                    BeepRoomba(port);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    break;
+                if BumpRight || BumpLeft || BumpFront
+                    display('BUMPED ON FRAME');
+                    imgtest = rgb2hsv(imread(str_ip));                
+                    leftpx = imgtest(round(imgy/2), 1, 1);
+                    left = leftpx > 0.5 && leftpx < 0.65;
+                    if (left)
+                        SetDriveWheelsCreate(port, 0, 0);
+                        pause(.1);
+                        display('LEFT');
+                        SetDriveWheelsCreate(port,-0.15,-0.15);
+                        pause(1.3);
+                        SetDriveWheelsCreate(port, 0, 0);
+                        turnAngle(port, .1,90);
+                        SetDriveWheelsCreate(port, .1,.1);
+                        pause(5);
+                        turnAngle(port,.1,-90);
+                        BeepRoomba(port);
+                        pause(1);
+                        BeepRoomba(port);
+                        break;
+                    elseif (~left)
+                        display('RIGHT');
+                        SetDriveWheelsCreate(port, 0, 0);
+                        pause(.1);
+                        SetDriveWheelsCreate(port,-0.15,-0.15);
+                        pause(2);
+                        SetDriveWheelsCreate(port, 0, 0);
+                        turnAngle(port,.1, -90);
+                        SetDriveWheelsCreate(port, .1,.1);
+                        pause(5);
+                        turnAngle(port,.1, 90);
+                        BeepRoomba(port);
+                        pause(1);
+                        BeepRoomba(port);
+                        break;
+                    %elseif (BumpFront)
+                    %    SetDriveWheelsCreate(port, 0, 0);
+                    %    pause(.1);
+                    %    SetDriveWheelsCreate(port,-0.15,-0.15);
+                    %    pause(.5);
+                    %    SetDriveWheelsCreate(port, 0, 0);
+                    %    BeepRoomba(port);
+                    %    BeepRoomba(port);
+                    %    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+                    %    break;
+                    end
                 end
                 
                 cur_state = KNOCKKNOCK;
@@ -171,29 +191,34 @@ function hw5_team_04_2(port)
 %                 turn_ang = acos(dot(v1, v2));
 %             end            
             
-        else cur_state == KNOCKKNOCK
+        elseif cur_state == KNOCKKNOCK
             display('state: knocking');
-            SetDriveWheelsCreate(port,.05,.05);
-            while true
-                if (BumpRight || BumpLeft || BumpFront)
-                    SetDriveWheelsCreate(port,0,0);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    SetDriveWheelsCreate(port,-.05,-.05);
-                    pause(.4);
-                    SetDriveWheelsCreate(port, 0, 0);
-                    BeepRoomba(port);
-                    BeepRoomba(port);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    %wait for door to open
-                    pause(5);
-                    %drive in and stop
-                    SetDriveWheelsCreate(port, 0.05, .05);
-                    pause(3);
-                    SetDriveWheelsCreate(port,0,0);
-                    [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
-                    break;
+            for dummy = 1:2
+                SetDriveWheelsCreate(port,.5,.5);
+                while true
+                    [BumpRight, BumpLeft, WheDropRight, WheDropLeft, WheDropCaster,...
+                             BumpFront] = BumpsWheelDropsSensorsRoomba(port);
+                    if (BumpRight || BumpLeft || BumpFront)
+                        SetDriveWheelsCreate(port,0,0);
+                        [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+                        SetDriveWheelsCreate(port,-.15,-.15);
+                        pause(2);
+                        SetDriveWheelsCreate(port, 0, 0);
+                        BeepRoomba(port);
+                        pause(1);
+                        BeepRoomba(port);
+                        [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
+                        %wait for door to open
+                        break;
+                    end
                 end
             end
+            pause(5);
+            %drive in and stop
+            SetDriveWheelsCreate(port, 0.2, 0.2);
+            pause(4);
+            SetDriveWheelsCreate(port,0,0);
+            [xpos, ypos, ang] = adjust_dist(port, xpos, ypos, ang);
             break;
         end
         
@@ -254,6 +279,7 @@ function [edges, x_cen] = check_door(img)
     biggest = findBiggest(pi);
     
     if size(biggest,1) == 0
+        display('biggest = 0');
         edges = 0;
         x_cen = 0;
         return;
@@ -275,6 +301,7 @@ function [edges, x_cen] = check_door(img)
     closest = 0;
     min_d = inf;
     if size(stat,1) == 0
+        display('statsize = 0');
         edges = 0;
         x_cen = 0;
         return;
